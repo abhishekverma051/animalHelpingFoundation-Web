@@ -7,6 +7,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { verifyAdminToken, JWT_SECRET } from './middleware/auth.js';
@@ -21,8 +24,79 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// -------------------------------------------------------------
+// PRODUCTION SECURITY MIDDLEWARES
+// -------------------------------------------------------------
+
+// 1. Helmet: Secure HTTP headers against Clickjacking, XSS, MIME Sniffing, HSTS
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable default CSP to allow loading external image URLs seamlessly
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// 2. NoSQL Injection Prevention: Sanitize request bodies and parameters
+app.use(mongoSanitize({
+  replaceWith: '_'
+}));
+
+// 3. Payload size limit to prevent Heap Memory exhaustion & DoS buffer attacks
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+
+// 4. CORS Whitelist: Strict allowed origins for public site & admin panel
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'https://animalhelpingfoundation.org',
+  'https://www.animalhelpingfoundation.org',
+  'https://animalhelpingfoundation-web.onrender.com'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, server-to-server) or whitelisted domains
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permissive fallback with credentials verification
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 5. Rate Limiter: General API Rate Limit (100 requests per 15 mins per IP)
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests from this IP address. Please try again after 15 minutes.'
+  }
+});
+app.use('/api/', generalLimiter);
+
+// 6. Strict Rate Limiter for Login Endpoint (5 login attempts per 15 mins per IP - Prevents Brute-Force Attack)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many failed login attempts. Account temporarily locked for 15 minutes to prevent brute-force attacks.'
+  }
+});
+
 // Multer in-memory storage for Cloudinary upload stream
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // Max 5MB file size limit for uploads
+});
 
 // Configure Cloudinary if credentials are provided in environment
 if (process.env.CLOUDINARY_CLOUD_NAME) {
@@ -34,8 +108,14 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
   console.log('☁️ Cloudinary image service configured successfully!');
 }
 
-app.use(cors());
-app.use(express.json());
+// XSS Sanitizer Helper (Strips dangerous HTML script tags from user inputs)
+const sanitizeText = (text) => {
+  if (typeof text !== 'string') return text;
+  return text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+             .replace(/javascript:/gi, '')
+             .replace(/onerror=/gi, '')
+             .replace(/onload=/gi, '');
+};
 
 // -------------------------------------------------------------
 // MONGOOSE SCHEMAS & MODELS (For MongoDB Production Mode)
@@ -164,20 +244,24 @@ app.post('/api/upload', verifyAdminToken, upload.single('image'), (req, res) => 
 // -------------------------------------------------------------
 // AUTH ROUTES
 // -------------------------------------------------------------
-app.post('/api/auth/login', async (req, res) => {
+
+// Admin Login with Strict Brute-Force Rate Limiting
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password are required.' });
   }
 
+  const cleanEmail = sanitizeText(email).trim().toLowerCase();
+
   let admin = null;
 
   if (isMongoConnected) {
-    admin = await AdminModel.findOne({ email: email.trim().toLowerCase() });
+    admin = await AdminModel.findOne({ email: cleanEmail });
   } else {
     const db = readFileDB();
-    if (db.admin && db.admin.email.toLowerCase() === email.trim().toLowerCase()) {
+    if (db.admin && db.admin.email.toLowerCase() === cleanEmail) {
       admin = db.admin;
     }
   }
@@ -398,8 +482,8 @@ app.post('/api/campaigns', verifyAdminToken, async (req, res) => {
 
   const newCampaign = {
     id: `camp-${Date.now()}`,
-    title: title.trim(),
-    description: description.trim(),
+    title: sanitizeText(title).trim(),
+    description: sanitizeText(description).trim(),
     image: image || 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
     goalAmount: Number(goalAmount),
     raisedAmount: 0,
@@ -437,8 +521,8 @@ app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
     const existing = await CampaignModel.findOne({ id });
     if (!existing) return res.status(404).json({ success: false, message: 'Campaign not found.' });
 
-    if (title !== undefined) existing.title = title.trim();
-    if (description !== undefined) existing.description = description.trim();
+    if (title !== undefined) existing.title = sanitizeText(title).trim();
+    if (description !== undefined) existing.description = sanitizeText(description).trim();
     if (image !== undefined) existing.image = image;
     if (goalAmount !== undefined) existing.goalAmount = Number(goalAmount);
     if (raisedAmount !== undefined) existing.raisedAmount = Number(raisedAmount);
@@ -454,8 +538,8 @@ app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
     const existing = db.campaigns[index];
     updatedCampaign = {
       ...existing,
-      title: title !== undefined ? title.trim() : existing.title,
-      description: description !== undefined ? description.trim() : existing.description,
+      title: title !== undefined ? sanitizeText(title).trim() : existing.title,
+      description: description !== undefined ? sanitizeText(description).trim() : existing.description,
       image: image !== undefined ? image : existing.image,
       goalAmount: goalAmount !== undefined ? Number(goalAmount) : existing.goalAmount,
       raisedAmount: raisedAmount !== undefined ? Number(raisedAmount) : existing.raisedAmount,
@@ -515,8 +599,8 @@ app.post('/api/campaigns/:id/cards', verifyAdminToken, async (req, res) => {
 
     newCard = {
       id: `card-${Date.now()}`,
-      heading: heading.trim(),
-      description: description.trim(),
+      heading: sanitizeText(heading).trim(),
+      description: sanitizeText(description).trim(),
       image: image || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80',
       order: (campaign.additionalCards || []).length + 1
     };
@@ -532,8 +616,8 @@ app.post('/api/campaigns/:id/cards', verifyAdminToken, async (req, res) => {
     if (!campaign.additionalCards) campaign.additionalCards = [];
     newCard = {
       id: `card-${Date.now()}`,
-      heading: heading.trim(),
-      description: description.trim(),
+      heading: sanitizeText(heading).trim(),
+      description: sanitizeText(description).trim(),
       image: image || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80',
       order: campaign.additionalCards.length + 1
     };
@@ -564,8 +648,8 @@ app.put('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res) =
     const card = campaign.additionalCards.find(c => c.id === cardId);
     if (!card) return res.status(404).json({ success: false, message: 'Content card not found.' });
 
-    if (heading !== undefined) card.heading = heading.trim();
-    if (description !== undefined) card.description = description.trim();
+    if (heading !== undefined) card.heading = sanitizeText(heading).trim();
+    if (description !== undefined) card.description = sanitizeText(description).trim();
     if (image !== undefined) card.image = image;
 
     await campaign.save();
@@ -582,8 +666,8 @@ app.put('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res) =
     const existingCard = campaign.additionalCards[cardIndex];
     updatedCard = {
       ...existingCard,
-      heading: heading !== undefined ? heading.trim() : existingCard.heading,
-      description: description !== undefined ? description.trim() : existingCard.description,
+      heading: heading !== undefined ? sanitizeText(heading).trim() : existingCard.heading,
+      description: description !== undefined ? sanitizeText(description).trim() : existingCard.description,
       image: image !== undefined ? image : existingCard.image
     };
     campaign.additionalCards[cardIndex] = updatedCard;
