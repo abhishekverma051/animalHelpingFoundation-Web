@@ -1,0 +1,147 @@
+{
+  "admin": {
+    "id": "admin-1",
+    "email": "admin@animalhelping.org",
+    "name": "NGO Administrator",
+    "role": "Super Admin",
+    "passwordHash": "$2a$10$w095HhJ/Hq4L2pYV4H1HeeP/r.fB8ZfS5.Q3kG.0LqS0t8bM1B0mC"
+  },
+  "featuredIds": [
+    "camp-1",
+    "camp-2",
+    "camp-3",
+    "camp-4"
+  ],
+  "campaigns": [
+    {
+      "id": "camp-1788764437279",
+      "title": "tesrtt",
+      "description": "jnjnkjknjknjnkjkn",
+      "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 100000,
+      "raisedAmount": 0,
+      "status": "Active",
+      "createdAt": "2026-09-07T07:00:37.279Z",
+      "additionalCards": []
+    },
+    {
+      "id": "camp-1",
+      "title": "Emergency Medical Care & Surgery for Injured Strays",
+      "description": "Providing urgent medical treatment, life-saving surgeries, and intensive ICU care for street animals hit by vehicles or critical illnesses.",
+      "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 500000,
+      "raisedAmount": 385000,
+      "status": "Active",
+      "createdAt": "2026-08-01T10:00:00Z",
+      "additionalCards": [
+        {
+          "id": "card-101",
+          "heading": "State-of-the-Art Mobile Ambulance",
+          "description": "Equipped with oxygen concentrators, stretchers, and emergency trauma kits to treat injured animals directly on site.",
+          "image": "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80",
+          "order": 1
+        },
+        {
+          "id": "card-102",
+          "heading": "24/7 Dedicated Veterinary Doctors",
+          "description": "Our team of compassionate veterinary surgeons work round-the-clock to perform emergency orthopedics and organ care.",
+          "image": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80",
+          "order": 2
+        },
+        {
+          "id": "card-103",
+          "heading": "Post-Op Recovery Shelter",
+          "description": "Hygienic recovery kennels with heating pads, specialized nutrition, and physical therapy for recovering strays.",
+          "image": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "camp-2",
+      "title": "Daily Nourishment & Meal Drive for 1,000+ Street Animals",
+      "description": "Feeding wholesome, nutritious food daily to thousands of hungry dogs, cats, and birds across urban and rural animal shelters.",
+      "image": "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 750000,
+      "raisedAmount": 610000,
+      "status": "Active",
+      "createdAt": "2026-08-05T12:30:00Z",
+      "additionalCards": [
+        {
+          "id": "card-201",
+          "heading": "Nutritious High-Protein Meal Prep",
+          "description": "Freshly cooked rice, eggs, and veterinary-approved protein mixes prepared daily in our centralized community kitchen.",
+          "image": "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80",
+          "order": 1
+        },
+        {
+          "id": "card-202",
+          "heading": "Dedicated Meal Vans",
+          "description": "Custom feeding routes covering over 45 urban sectors every single morning and evening without fail.",
+          "image": "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=800&q=80",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "camp-3",
+      "title": "Rabies Vaccination & ABC (Animal Birth Control) Program",
+      "description": "Humane population control and mass anti-rabies vaccination drives to protect stray dogs and community public health.",
+      "image": "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 400000,
+      "raisedAmount": 290000,
+      "status": "Active",
+      "createdAt": "2026-08-10T09:15:00Z",
+      "additionalCards": [
+        {
+          "id": "card-301",
+          "heading": "Mass Anti-Rabies Drive",
+          "description": "Over 5,000 stray dogs vaccinated annually with bright ear-tags for identification and tracking.",
+          "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80",
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "camp-4",
+      "title": "Winter Coat & Cozy Shelter Protection Drive",
+      "description": "Distributing warm waterproof coats, straw bedding, and sheltered structures to protect homeless animals during harsh winter conditions.",
+      "image": "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 300000,
+      "raisedAmount": 245000,
+      "status": "Active",
+      "createdAt": "2026-08-15T14:20:00Z",
+      "additionalCards": [
+        {
+          "id": "card-401",
+          "heading": "Waterproof Thermal Jackets",
+          "description": "Custom durable jackets designed specifically for stray animals to retain body warmth in freezing temperatures.",
+          "image": "https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=800&q=80",
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "camp-5",
+      "title": "Clean Drinking Water Stations across the City",
+      "description": "Installing and maintaining 500+ cement water bowls in high-temperature areas so stray animals never suffer from dehydration.",
+      "image": "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 200000,
+      "raisedAmount": 180000,
+      "status": "Active",
+      "createdAt": "2026-08-20T11:00:00Z",
+      "additionalCards": []
+    },
+    {
+      "id": "camp-6",
+      "title": "Cattle & Abandoned Farm Animal Sanctuary Expansion",
+      "description": "Expanding our sanctuary facilities to shelter old, rescued, and abandoned cattle and working animals with dignity.",
+      "image": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 1000000,
+      "raisedAmount": 420000,
+      "status": "Paused",
+      "createdAt": "2026-08-25T16:45:00Z",
+      "additionalCards": []
+    }
+  ]
+}

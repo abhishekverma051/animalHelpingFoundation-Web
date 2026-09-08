@@ -1,0 +1,17 @@
+{
+  "name": "animal-ngo-backend",
+  "version": "1.0.0",
+  "description": "Standalone backend API for Animal Helping Foundation Admin Panel and Public Website",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
