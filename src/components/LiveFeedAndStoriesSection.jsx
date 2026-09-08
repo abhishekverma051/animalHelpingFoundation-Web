@@ -33,7 +33,7 @@ const fallbackBlogStories = [
   }
 ];
 
-export default function LiveFeedAndStoriesSection() {
+export default function LiveFeedAndStoriesSection({ campaign, donations }) {
   const [blogs, setBlogs] = useState(fallbackBlogStories);
 
   useEffect(() => {
@@ -50,6 +50,26 @@ export default function LiveFeedAndStoriesSection() {
     return () => { isMounted = false; };
   }, []);
 
+  // Compute dynamic stats if campaign is passed
+  const displayImg = campaign?.image || "/assets/dogWithAmbrella.jpg";
+  const raisedAmount = campaign ? Number(campaign.raisedAmount || 0) : 456373;
+  const goalAmount = campaign ? Number(campaign.goalAmount || 1) : 1200000;
+  const fundedPercent = Math.min(Math.round((raisedAmount / (goalAmount || 1)) * 100), 100);
+  
+  // Format raised display amount for overlay
+  const raisedLakhs = raisedAmount >= 100000 ? (raisedAmount / 100000).toFixed(1) + ' L' : raisedAmount.toLocaleString();
+
+  // Donor list
+  const activeDonors = (donations && donations.length > 0)
+    ? donations.slice(0, 5).map(d => ({
+        name: d.donorName || 'Anonymous',
+        time: d.createdAt ? new Date(d.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Recent',
+        amount: `₹${Number(d.amount).toLocaleString()}`
+      }))
+    : liveDonors;
+
+  const totalDonorCount = (donations && donations.length > 0) ? donations.length : 156;
+
   return (
     <section className="donors-dark-bg-section">
       <div className="container" style={{ paddingLeft: '80px', paddingRight: '80px' }}>
@@ -57,24 +77,27 @@ export default function LiveFeedAndStoriesSection() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '32px', marginBottom: '24px' }}>
           {/* Left Box: Photo with Raised Till Now Overlay */}
           <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '320px', background: '#111' }}>
-            <img src="/assets/dogWithAmbrella.jpg" alt="Dogs under Umbrella" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={displayImg} alt={campaign?.title || "Dogs under Umbrella"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 100%)', padding: '24px' }}>
               <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>
                 Raised Till Now:
               </div>
               <div style={{ fontSize: '2.8rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
-                ₹ 4.2 L<span style={{ color: '#f87171' }}>+</span>
+                ₹ {raisedLakhs}<span style={{ color: '#f87171' }}>+</span>
               </div>
             </div>
           </div>
 
           {/* Right Box: Recent Donors List in subtle border box */}
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            {liveDonors.map((donor, idx) => (
-              <div className="donor-feed-item" key={idx} style={{ padding: '10px 0', borderBottom: idx < liveDonors.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none' }}>
+            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '1rem', marginBottom: '12px', opacity: 0.9 }}>
+              Recent Campaign Supporters ({totalDonorCount})
+            </div>
+            {activeDonors.map((donor, idx) => (
+              <div className="donor-feed-item" key={idx} style={{ padding: '10px 0', borderBottom: idx < activeDonors.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: '#f87171' }}>
-                    {donor.name.charAt(0)}
+                    {(donor.name || 'A').charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{donor.name}</div>
@@ -93,11 +116,11 @@ export default function LiveFeedAndStoriesSection() {
         {/* Progress Bar & Funding Stats matching Screenshot 4 */}
         <div style={{ marginBottom: '80px' }}>
           <div style={{ height: '6px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px' }}>
-            <div style={{ width: '38%', height: '100%', background: '#ef4444' }}></div>
+            <div style={{ width: `${fundedPercent}%`, height: '100%', background: '#ef4444' }}></div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-            <span style={{ fontWeight: 800, color: '#ffffff' }}>₹4,56,373 / ₹12,00,000</span>
-            <span style={{ color: '#9ca3af' }}>38% funded · <strong style={{ color: '#ffffff' }}>156 donors</strong></span>
+            <span style={{ fontWeight: 800, color: '#ffffff' }}>₹{raisedAmount.toLocaleString()} / ₹{goalAmount.toLocaleString()}</span>
+            <span style={{ color: '#9ca3af' }}>{fundedPercent}% funded · <strong style={{ color: '#ffffff' }}>{totalDonorCount} donors</strong></span>
           </div>
         </div>
 

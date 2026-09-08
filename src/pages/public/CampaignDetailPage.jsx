@@ -439,95 +439,7 @@ export default function CampaignDetailPage() {
         </div>
       </div>
 
-      {/* DONOR LIST SECTION */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto 60px', padding: '0 24px' }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #e2e8f0',
-          padding: '36px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Heart size={26} color="#d32020" fill="#d32020" />
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Donor List
-              </h2>
-            </div>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b', backgroundColor: '#f1f5f9', padding: '6px 14px', borderRadius: '9999px' }}>
-              {donations.length} {donations.length === 1 ? 'Supporter' : 'Supporters'}
-            </span>
-          </div>
-
-          {donations.length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
-              <p style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
-                No donations recorded yet for this campaign. Be the first kind supporter! 🐾
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {donations.map((don, idx) => (
-                <div key={don.id || idx} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px 20px',
-                  backgroundColor: don.isAnonymous ? '#f8fafc' : '#ffffff',
-                  borderRadius: '14px',
-                  border: '1px solid #e2e8f0'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '50%',
-                      backgroundColor: don.isAnonymous ? '#e2e8f0' : '#fee2e2',
-                      color: don.isAnonymous ? '#475569' : '#dc2626',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      fontSize: '1rem'
-                    }}>
-                      {don.isAnonymous ? '?' : (don.donorName || 'A').charAt(0).toUpperCase()}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 700,
-                        color: don.isAnonymous ? '#64748b' : '#0f172a',
-                        fontStyle: don.isAnonymous ? 'italic' : 'normal'
-                      }}>
-                        {don.donorName}
-                      </span>
-                      {don.isAnonymous && (
-                        <span style={{
-                          fontSize: '0.72rem',
-                          backgroundColor: '#e2e8f0',
-                          color: '#475569',
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          fontWeight: 700
-                        }}>
-                          Anonymous
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669' }}>
-                    {formatCurrency(don.amount)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <LiveFeedAndStoriesSection />
+      <LiveFeedAndStoriesSection campaign={campaign} donations={donations} />
       <FaqSection />
       <Footer />
 
@@ -643,7 +555,7 @@ export default function CampaignDetailPage() {
         {/* Center & Right: Presets & Amount Input & Donate Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {[2000, 3000, 4000, 5000].map((amt) => (
+            {[500, 1000, 2500, 5000, 10000].map((amt) => (
               <button
                 key={amt}
                 onClick={() => {
