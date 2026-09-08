@@ -7,6 +7,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { v2 as cloudinary } from 'cloudinary';
+import multer from 'multer';
 import { verifyAdminToken, JWT_SECRET } from './middleware/auth.js';
 
 dotenv.config();
@@ -18,6 +20,19 @@ const DB_PATH = path.join(__dirname, 'data', 'db.json');
 const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
+
+// Multer in-memory storage for Cloudinary upload stream
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Configure Cloudinary if credentials are provided in environment
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  console.log('☁️ Cloudinary image service configured successfully!');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -61,7 +76,7 @@ const CampaignModel = mongoose.model('Campaign', campaignSchema);
 const FeaturedModel = mongoose.model('Featured', featuredSchema);
 const AdminModel = mongoose.model('Admin', adminSchema);
 
-// Helper functions for file DB persistence (fallback when MONGODB_URI is not set)
+// Helper functions for file DB persistence
 const readFileDB = () => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8');
@@ -89,7 +104,6 @@ if (MONGODB_URI) {
       isMongoConnected = true;
       console.log('🍃 Successfully connected to MongoDB Atlas Cloud Database!');
       
-      // Auto-seed MongoDB from db.json if collections are empty
       const campaignCount = await CampaignModel.countDocuments();
       if (campaignCount === 0) {
         console.log('🌱 Seeding MongoDB Atlas with initial campaign data...');
@@ -113,6 +127,39 @@ if (MONGODB_URI) {
 } else {
   console.log('ℹ️ MONGODB_URI not detected in environment. Using local db.json storage mode.');
 }
+
+// -------------------------------------------------------------
+// CLOUDINARY IMAGE UPLOAD ROUTE
+// -------------------------------------------------------------
+app.post('/api/upload', verifyAdminToken, upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image file provided for upload.' });
+  }
+
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Cloudinary credentials are not configured on the backend environment.' 
+    });
+  }
+
+  const stream = cloudinary.uploader.upload_stream(
+    { folder: 'animal_ngo_campaigns' },
+    (error, result) => {
+      if (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({ success: false, message: 'Failed to upload image to Cloudinary.' });
+      }
+      res.json({
+        success: true,
+        message: 'Image uploaded successfully to Cloudinary.',
+        url: result.secure_url
+      });
+    }
+  );
+
+  stream.end(req.file.buffer);
+});
 
 // -------------------------------------------------------------
 // AUTH ROUTES
