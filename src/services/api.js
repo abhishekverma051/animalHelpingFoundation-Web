@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
     ? 'http://localhost:5001/api' 
-    : '/api');
+    : 'https://animalhelpingfoundation-web.onrender.com/api');
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('admin_token');
@@ -14,7 +14,7 @@ const getAuthHeaders = () => {
 const handleResponse = async (res, defaultErrorMessage) => {
   const contentType = res.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Backend API server is offline or unreachable. Please start the backend server (Node.js/Render).');
+    throw new Error('Backend API server is offline or unreachable. Please check backend connection.');
   }
 
   const data = await res.json();
