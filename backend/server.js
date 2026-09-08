@@ -5,7 +5,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import { verifyAdminToken, JWT_SECRET } from './middleware/auth.js';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,37 +17,106 @@ const DB_PATH = path.join(__dirname, 'data', 'db.json');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Enable CORS for all requests (allows public website and admin panel from any origin)
 app.use(cors());
 app.use(express.json());
 
-// Helper functions for file DB persistence
-const readDB = () => {
+// -------------------------------------------------------------
+// MONGOOSE SCHEMAS & MODELS (For MongoDB Production Mode)
+// -------------------------------------------------------------
+let isMongoConnected = false;
+
+const campaignSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  image: { type: String, required: true },
+  goalAmount: { type: Number, required: true },
+  raisedAmount: { type: Number, default: 0 },
+  status: { type: String, enum: ['Active', 'Paused', 'Closed'], default: 'Active' },
+  createdAt: { type: String, default: () => new Date().toISOString() },
+  additionalCards: [{
+    id: String,
+    heading: String,
+    description: String,
+    image: String,
+    order: Number
+  }]
+});
+
+const featuredSchema = new mongoose.Schema({
+  featuredIds: [String]
+});
+
+const adminSchema = new mongoose.Schema({
+  id: { type: String, default: 'admin-1' },
+  email: { type: String, required: true },
+  name: { type: String, default: 'NGO Administrator' },
+  role: { type: String, default: 'Super Admin' },
+  passwordHash: { type: String, required: true }
+});
+
+const CampaignModel = mongoose.model('Campaign', campaignSchema);
+const FeaturedModel = mongoose.model('Featured', featuredSchema);
+const AdminModel = mongoose.model('Admin', adminSchema);
+
+// Helper functions for file DB persistence (fallback when MONGODB_URI is not set)
+const readFileDB = () => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
-    console.error('Error reading database:', error);
+    console.error('Error reading file database:', error);
     return { admin: {}, featuredIds: [], campaigns: [] };
   }
 };
 
-const writeDB = (data) => {
+const writeFileDB = (data) => {
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
     return true;
   } catch (error) {
-    console.error('Error writing to database:', error);
+    console.error('Error writing to file database:', error);
     return false;
   }
 };
 
+// Initialize MongoDB connection if MONGODB_URI is provided
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI)
+    .then(async () => {
+      isMongoConnected = true;
+      console.log('🍃 Successfully connected to MongoDB Atlas Cloud Database!');
+      
+      // Auto-seed MongoDB from db.json if collections are empty
+      const campaignCount = await CampaignModel.countDocuments();
+      if (campaignCount === 0) {
+        console.log('🌱 Seeding MongoDB Atlas with initial campaign data...');
+        const initial = readFileDB();
+        if (initial.campaigns && initial.campaigns.length > 0) {
+          await CampaignModel.insertMany(initial.campaigns);
+        }
+        if (initial.featuredIds) {
+          await FeaturedModel.create({ featuredIds: initial.featuredIds });
+        }
+        if (initial.admin && initial.admin.email) {
+          await AdminModel.create(initial.admin);
+        }
+        console.log('✅ MongoDB Atlas seeded successfully!');
+      }
+    })
+    .catch((err) => {
+      console.error('⚠️ MongoDB connection error. Falling back to local JSON DB:', err.message);
+      isMongoConnected = false;
+    });
+} else {
+  console.log('ℹ️ MONGODB_URI not detected in environment. Using local db.json storage mode.');
+}
+
 // -------------------------------------------------------------
 // AUTH ROUTES
 // -------------------------------------------------------------
-
-// Admin Login
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -51,14 +124,21 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Email and password are required.' });
   }
 
-  const db = readDB();
-  const admin = db.admin;
+  let admin = null;
 
-  if (!admin || admin.email.toLowerCase() !== email.trim().toLowerCase()) {
+  if (isMongoConnected) {
+    admin = await AdminModel.findOne({ email: email.trim().toLowerCase() });
+  } else {
+    const db = readFileDB();
+    if (db.admin && db.admin.email.toLowerCase() === email.trim().toLowerCase()) {
+      admin = db.admin;
+    }
+  }
+
+  if (!admin) {
     return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
   }
 
-  // Verify password with bcrypt, fallback to plain text if needed for seed
   let isValid = false;
   try {
     isValid = await bcrypt.compare(password, admin.passwordHash);
@@ -74,9 +154,8 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
   }
 
-  // Issue JWT Token
   const token = jwt.sign(
-    { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
+    { id: admin.id || 'admin-1', email: admin.email, name: admin.name || 'Admin', role: admin.role || 'Super Admin' },
     JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -86,15 +165,14 @@ app.post('/api/auth/login', async (req, res) => {
     message: 'Admin authentication successful.',
     token,
     user: {
-      id: admin.id,
+      id: admin.id || 'admin-1',
       email: admin.email,
-      name: admin.name,
-      role: admin.role
+      name: admin.name || 'NGO Administrator',
+      role: admin.role || 'Super Admin'
     }
   });
 });
 
-// Verify active admin session
 app.get('/api/auth/me', verifyAdminToken, (req, res) => {
   res.json({
     success: true,
@@ -105,14 +183,26 @@ app.get('/api/auth/me', verifyAdminToken, (req, res) => {
 // -------------------------------------------------------------
 // STATS ROUTE
 // -------------------------------------------------------------
-app.get('/api/stats', (req, res) => {
-  const db = readDB();
-  const totalCampaigns = db.campaigns.length;
-  const overallFundingRaised = db.campaigns.reduce((sum, c) => sum + Number(c.raisedAmount || 0), 0);
-  const activeCount = db.campaigns.filter(c => c.status === 'Active').length;
-  const pausedCount = db.campaigns.filter(c => c.status === 'Paused').length;
-  const closedCount = db.campaigns.filter(c => c.status === 'Closed').length;
-  const featuredCount = db.featuredIds.length;
+app.get('/api/stats', async (req, res) => {
+  let campaigns = [];
+  let featuredIds = [];
+
+  if (isMongoConnected) {
+    campaigns = await CampaignModel.find();
+    const featDoc = await FeaturedModel.findOne();
+    featuredIds = featDoc ? featDoc.featuredIds : [];
+  } else {
+    const db = readFileDB();
+    campaigns = db.campaigns || [];
+    featuredIds = db.featuredIds || [];
+  }
+
+  const totalCampaigns = campaigns.length;
+  const overallFundingRaised = campaigns.reduce((sum, c) => sum + Number(c.raisedAmount || 0), 0);
+  const activeCount = campaigns.filter(c => c.status === 'Active').length;
+  const pausedCount = campaigns.filter(c => c.status === 'Paused').length;
+  const closedCount = campaigns.filter(c => c.status === 'Closed').length;
+  const featuredCount = featuredIds.length;
 
   res.json({
     success: true,
@@ -131,30 +221,38 @@ app.get('/api/stats', (req, res) => {
 // -------------------------------------------------------------
 // FEATURED CAMPAIGNS ROUTES (MAX 4)
 // -------------------------------------------------------------
+app.get('/api/featured', async (req, res) => {
+  let campaigns = [];
+  let featuredIds = [];
 
-// Get featured campaigns
-app.get('/api/featured', (req, res) => {
-  const db = readDB();
-  const featuredCampaigns = db.featuredIds
-    .map(id => db.campaigns.find(c => c.id === id))
+  if (isMongoConnected) {
+    campaigns = await CampaignModel.find();
+    const featDoc = await FeaturedModel.findOne();
+    featuredIds = featDoc ? featDoc.featuredIds : [];
+  } else {
+    const db = readFileDB();
+    campaigns = db.campaigns || [];
+    featuredIds = db.featuredIds || [];
+  }
+
+  const featuredCampaigns = featuredIds
+    .map(id => campaigns.find(c => c.id === id))
     .filter(Boolean);
 
   res.json({
     success: true,
-    featuredIds: db.featuredIds,
+    featuredIds,
     featuredCampaigns
   });
 });
 
-// Update featured campaigns (Protected) - Strictly enforces max 4 limit
-app.put('/api/featured', verifyAdminToken, (req, res) => {
+app.put('/api/featured', verifyAdminToken, async (req, res) => {
   const { featuredIds } = req.body;
 
   if (!Array.isArray(featuredIds)) {
     return res.status(400).json({ success: false, message: 'featuredIds must be an array of campaign IDs.' });
   }
 
-  // Strict check: Maximum 4 featured campaigns allowed
   if (featuredIds.length > 4) {
     return res.status(400).json({
       success: false,
@@ -162,22 +260,25 @@ app.put('/api/featured', verifyAdminToken, (req, res) => {
     });
   }
 
-  const db = readDB();
-  
-  // Verify all IDs exist in campaigns DB
-  const validIds = featuredIds.filter(id => db.campaigns.some(c => c.id === id));
+  let featuredCampaigns = [];
 
-  db.featuredIds = validIds;
-  writeDB(db);
-
-  const featuredCampaigns = db.featuredIds
-    .map(id => db.campaigns.find(c => c.id === id))
-    .filter(Boolean);
+  if (isMongoConnected) {
+    const allCampaigns = await CampaignModel.find();
+    const validIds = featuredIds.filter(id => allCampaigns.some(c => c.id === id));
+    await FeaturedModel.findOneAndUpdate({}, { featuredIds: validIds }, { upsert: true, new: true });
+    featuredCampaigns = validIds.map(id => allCampaigns.find(c => c.id === id)).filter(Boolean);
+  } else {
+    const db = readFileDB();
+    const validIds = featuredIds.filter(id => db.campaigns.some(c => c.id === id));
+    db.featuredIds = validIds;
+    writeFileDB(db);
+    featuredCampaigns = validIds.map(id => db.campaigns.find(c => c.id === id)).filter(Boolean);
+  }
 
   res.json({
     success: true,
     message: 'Featured campaigns updated successfully.',
-    featuredIds: db.featuredIds,
+    featuredIds,
     featuredCampaigns
   });
 });
@@ -185,13 +286,21 @@ app.put('/api/featured', verifyAdminToken, (req, res) => {
 // -------------------------------------------------------------
 // CAMPAIGN CRUD ROUTES
 // -------------------------------------------------------------
-
-// Get all campaigns
-app.get('/api/campaigns', (req, res) => {
-  const db = readDB();
+app.get('/api/campaigns', async (req, res) => {
   const { status } = req.query;
+  let campaigns = [];
+  let featuredIds = [];
 
-  let campaigns = db.campaigns;
+  if (isMongoConnected) {
+    campaigns = await CampaignModel.find();
+    const featDoc = await FeaturedModel.findOne();
+    featuredIds = featDoc ? featDoc.featuredIds : [];
+  } else {
+    const db = readFileDB();
+    campaigns = db.campaigns || [];
+    featuredIds = db.featuredIds || [];
+  }
+
   if (status) {
     campaigns = campaigns.filter(c => c.status.toLowerCase() === status.toLowerCase());
   }
@@ -199,41 +308,46 @@ app.get('/api/campaigns', (req, res) => {
   res.json({
     success: true,
     campaigns,
-    featuredIds: db.featuredIds
+    featuredIds
   });
 });
 
-// Get single campaign by ID
-app.get('/api/campaigns/:id', (req, res) => {
-  const db = readDB();
-  const campaign = db.campaigns.find(c => c.id === req.params.id);
+app.get('/api/campaigns/:id', async (req, res) => {
+  let campaign = null;
+  let featuredIds = [];
+
+  if (isMongoConnected) {
+    campaign = await CampaignModel.findOne({ id: req.params.id });
+    const featDoc = await FeaturedModel.findOne();
+    featuredIds = featDoc ? featDoc.featuredIds : [];
+  } else {
+    const db = readFileDB();
+    campaign = db.campaigns.find(c => c.id === req.params.id);
+    featuredIds = db.featuredIds || [];
+  }
 
   if (!campaign) {
     return res.status(404).json({ success: false, message: 'Campaign not found.' });
   }
 
-  // Sort additional cards by order
   const sortedCampaign = {
-    ...campaign,
-    additionalCards: (campaign.additionalCards || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+    ...campaign.toObject ? campaign.toObject() : campaign,
+    additionalCards: ((campaign.additionalCards || []).slice()).sort((a, b) => (a.order || 0) - (b.order || 0))
   };
 
   res.json({
     success: true,
     campaign: sortedCampaign,
-    isFeatured: db.featuredIds.includes(campaign.id)
+    isFeatured: featuredIds.includes(campaign.id)
   });
 });
 
-// Create new campaign (Protected)
-app.post('/api/campaigns', verifyAdminToken, (req, res) => {
+app.post('/api/campaigns', verifyAdminToken, async (req, res) => {
   const { title, description, image, goalAmount } = req.body;
 
   if (!title || !description || !goalAmount) {
     return res.status(400).json({ success: false, message: 'Title, description, and goal amount are required.' });
   }
-
-  const db = readDB();
 
   const newCampaign = {
     id: `camp-${Date.now()}`,
@@ -247,8 +361,13 @@ app.post('/api/campaigns', verifyAdminToken, (req, res) => {
     additionalCards: []
   };
 
-  db.campaigns.unshift(newCampaign);
-  writeDB(db);
+  if (isMongoConnected) {
+    await CampaignModel.create(newCampaign);
+  } else {
+    const db = readFileDB();
+    db.campaigns.unshift(newCampaign);
+    writeFileDB(db);
+  }
 
   res.status(201).json({
     success: true,
@@ -257,37 +376,47 @@ app.post('/api/campaigns', verifyAdminToken, (req, res) => {
   });
 });
 
-// Update campaign (Protected)
-app.put('/api/campaigns/:id', verifyAdminToken, (req, res) => {
+app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
   const { title, description, image, goalAmount, raisedAmount, status } = req.body;
-
-  const db = readDB();
-  const index = db.campaigns.findIndex(c => c.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: 'Campaign not found.' });
-  }
-
-  const existing = db.campaigns[index];
 
   if (status && !['Active', 'Paused', 'Closed'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status. Must be Active, Paused, or Closed.' });
   }
 
-  const updatedCampaign = {
-    ...existing,
-    title: title !== undefined ? title.trim() : existing.title,
-    description: description !== undefined ? description.trim() : existing.description,
-    image: image !== undefined ? image : existing.image,
-    goalAmount: goalAmount !== undefined ? Number(goalAmount) : existing.goalAmount,
-    raisedAmount: raisedAmount !== undefined ? Number(raisedAmount) : existing.raisedAmount,
-    status: status !== undefined ? status : existing.status,
-    updatedAt: new Date().toISOString()
-  };
+  let updatedCampaign = null;
 
-  db.campaigns[index] = updatedCampaign;
-  writeDB(db);
+  if (isMongoConnected) {
+    const existing = await CampaignModel.findOne({ id });
+    if (!existing) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    if (title !== undefined) existing.title = title.trim();
+    if (description !== undefined) existing.description = description.trim();
+    if (image !== undefined) existing.image = image;
+    if (goalAmount !== undefined) existing.goalAmount = Number(goalAmount);
+    if (raisedAmount !== undefined) existing.raisedAmount = Number(raisedAmount);
+    if (status !== undefined) existing.status = status;
+
+    await existing.save();
+    updatedCampaign = existing;
+  } else {
+    const db = readFileDB();
+    const index = db.campaigns.findIndex(c => c.id === id);
+    if (index === -1) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    const existing = db.campaigns[index];
+    updatedCampaign = {
+      ...existing,
+      title: title !== undefined ? title.trim() : existing.title,
+      description: description !== undefined ? description.trim() : existing.description,
+      image: image !== undefined ? image : existing.image,
+      goalAmount: goalAmount !== undefined ? Number(goalAmount) : existing.goalAmount,
+      raisedAmount: raisedAmount !== undefined ? Number(raisedAmount) : existing.raisedAmount,
+      status: status !== undefined ? status : existing.status
+    };
+    db.campaigns[index] = updatedCampaign;
+    writeFileDB(db);
+  }
 
   res.json({
     success: true,
@@ -296,21 +425,22 @@ app.put('/api/campaigns/:id', verifyAdminToken, (req, res) => {
   });
 });
 
-// Delete campaign (Protected)
-app.delete('/api/campaigns/:id', verifyAdminToken, (req, res) => {
+app.delete('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
-  const db = readDB();
 
-  const index = db.campaigns.findIndex(c => c.id === id);
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: 'Campaign not found.' });
+  if (isMongoConnected) {
+    await CampaignModel.deleteOne({ id });
+    const featDoc = await FeaturedModel.findOne();
+    if (featDoc && featDoc.featuredIds.includes(id)) {
+      featDoc.featuredIds = featDoc.featuredIds.filter(fId => fId !== id);
+      await featDoc.save();
+    }
+  } else {
+    const db = readFileDB();
+    db.campaigns = db.campaigns.filter(c => c.id !== id);
+    db.featuredIds = db.featuredIds.filter(fId => fId !== id);
+    writeFileDB(db);
   }
-
-  db.campaigns.splice(index, 1);
-  // Also remove from featured list if present
-  db.featuredIds = db.featuredIds.filter(fId => fId !== id);
-
-  writeDB(db);
 
   res.json({
     success: true,
@@ -319,11 +449,9 @@ app.delete('/api/campaigns/:id', verifyAdminToken, (req, res) => {
 });
 
 // -------------------------------------------------------------
-// ADDITIONAL CONTENT CARDS ROUTES (Protected)
+// ADDITIONAL CONTENT CARDS ROUTES
 // -------------------------------------------------------------
-
-// Add content card to campaign
-app.post('/api/campaigns/:id/cards', verifyAdminToken, (req, res) => {
+app.post('/api/campaigns/:id/cards', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
   const { heading, description, image } = req.body;
 
@@ -331,146 +459,129 @@ app.post('/api/campaigns/:id/cards', verifyAdminToken, (req, res) => {
     return res.status(400).json({ success: false, message: 'Heading and description are required for content cards.' });
   }
 
-  const db = readDB();
-  const campaign = db.campaigns.find(c => c.id === id);
+  let additionalCards = [];
+  let newCard = null;
 
-  if (!campaign) {
-    return res.status(404).json({ success: false, message: 'Campaign not found.' });
+  if (isMongoConnected) {
+    const campaign = await CampaignModel.findOne({ id });
+    if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    newCard = {
+      id: `card-${Date.now()}`,
+      heading: heading.trim(),
+      description: description.trim(),
+      image: image || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80',
+      order: (campaign.additionalCards || []).length + 1
+    };
+
+    campaign.additionalCards.push(newCard);
+    await campaign.save();
+    additionalCards = campaign.additionalCards;
+  } else {
+    const db = readFileDB();
+    const campaign = db.campaigns.find(c => c.id === id);
+    if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    if (!campaign.additionalCards) campaign.additionalCards = [];
+    newCard = {
+      id: `card-${Date.now()}`,
+      heading: heading.trim(),
+      description: description.trim(),
+      image: image || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80',
+      order: campaign.additionalCards.length + 1
+    };
+    campaign.additionalCards.push(newCard);
+    writeFileDB(db);
+    additionalCards = campaign.additionalCards;
   }
-
-  if (!campaign.additionalCards) {
-    campaign.additionalCards = [];
-  }
-
-  const newCard = {
-    id: `card-${Date.now()}`,
-    heading: heading.trim(),
-    description: description.trim(),
-    image: image || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80',
-    order: campaign.additionalCards.length + 1
-  };
-
-  campaign.additionalCards.push(newCard);
-  writeDB(db);
 
   res.status(201).json({
     success: true,
     message: 'Additional content card added successfully.',
     card: newCard,
-    additionalCards: campaign.additionalCards
+    additionalCards
   });
 });
 
-// Edit content card
-app.put('/api/campaigns/:id/cards/:cardId', verifyAdminToken, (req, res) => {
+app.put('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res) => {
   const { id, cardId } = req.params;
   const { heading, description, image } = req.body;
 
-  const db = readDB();
-  const campaign = db.campaigns.find(c => c.id === id);
+  let additionalCards = [];
+  let updatedCard = null;
 
-  if (!campaign || !campaign.additionalCards) {
-    return res.status(404).json({ success: false, message: 'Campaign or content card not found.' });
+  if (isMongoConnected) {
+    const campaign = await CampaignModel.findOne({ id });
+    if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    const card = campaign.additionalCards.find(c => c.id === cardId);
+    if (!card) return res.status(404).json({ success: false, message: 'Content card not found.' });
+
+    if (heading !== undefined) card.heading = heading.trim();
+    if (description !== undefined) card.description = description.trim();
+    if (image !== undefined) card.image = image;
+
+    await campaign.save();
+    updatedCard = card;
+    additionalCards = campaign.additionalCards;
+  } else {
+    const db = readFileDB();
+    const campaign = db.campaigns.find(c => c.id === id);
+    if (!campaign || !campaign.additionalCards) return res.status(404).json({ success: false, message: 'Campaign or content card not found.' });
+
+    const cardIndex = campaign.additionalCards.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return res.status(404).json({ success: false, message: 'Content card not found.' });
+
+    const existingCard = campaign.additionalCards[cardIndex];
+    updatedCard = {
+      ...existingCard,
+      heading: heading !== undefined ? heading.trim() : existingCard.heading,
+      description: description !== undefined ? description.trim() : existingCard.description,
+      image: image !== undefined ? image : existingCard.image
+    };
+    campaign.additionalCards[cardIndex] = updatedCard;
+    writeFileDB(db);
+    additionalCards = campaign.additionalCards;
   }
-
-  const cardIndex = campaign.additionalCards.findIndex(card => card.id === cardId);
-  if (cardIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Content card not found.' });
-  }
-
-  const existingCard = campaign.additionalCards[cardIndex];
-  const updatedCard = {
-    ...existingCard,
-    heading: heading !== undefined ? heading.trim() : existingCard.heading,
-    description: description !== undefined ? description.trim() : existingCard.description,
-    image: image !== undefined ? image : existingCard.image
-  };
-
-  campaign.additionalCards[cardIndex] = updatedCard;
-  writeDB(db);
 
   res.json({
     success: true,
     message: 'Content card updated successfully.',
     card: updatedCard,
-    additionalCards: campaign.additionalCards
+    additionalCards
   });
 });
 
-// Delete content card
-app.delete('/api/campaigns/:id/cards/:cardId', verifyAdminToken, (req, res) => {
+app.delete('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res) => {
   const { id, cardId } = req.params;
+  let additionalCards = [];
 
-  const db = readDB();
-  const campaign = db.campaigns.find(c => c.id === id);
+  if (isMongoConnected) {
+    const campaign = await CampaignModel.findOne({ id });
+    if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found.' });
 
-  if (!campaign || !campaign.additionalCards) {
-    return res.status(404).json({ success: false, message: 'Campaign or content card not found.' });
+    campaign.additionalCards = campaign.additionalCards.filter(c => c.id !== cardId);
+    campaign.additionalCards.forEach((c, idx) => { c.order = idx + 1; });
+    await campaign.save();
+    additionalCards = campaign.additionalCards;
+  } else {
+    const db = readFileDB();
+    const campaign = db.campaigns.find(c => c.id === id);
+    if (!campaign || !campaign.additionalCards) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+
+    campaign.additionalCards = campaign.additionalCards.filter(c => c.id !== cardId);
+    campaign.additionalCards.forEach((c, idx) => { c.order = idx + 1; });
+    writeFileDB(db);
+    additionalCards = campaign.additionalCards;
   }
-
-  const cardIndex = campaign.additionalCards.findIndex(card => card.id === cardId);
-  if (cardIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Content card not found.' });
-  }
-
-  campaign.additionalCards.splice(cardIndex, 1);
-
-  // Re-index order
-  campaign.additionalCards.forEach((c, idx) => {
-    c.order = idx + 1;
-  });
-
-  writeDB(db);
 
   res.json({
     success: true,
     message: 'Content card deleted successfully.',
-    additionalCards: campaign.additionalCards
+    additionalCards
   });
 });
 
-// Reorder content cards
-app.put('/api/campaigns/:id/cards/reorder', verifyAdminToken, (req, res) => {
-  const { id } = req.params;
-  const { cardIds } = req.body; // Array of card IDs in new order
-
-  if (!Array.isArray(cardIds)) {
-    return res.status(400).json({ success: false, message: 'cardIds must be an array of card IDs.' });
-  }
-
-  const db = readDB();
-  const campaign = db.campaigns.find(c => c.id === id);
-
-  if (!campaign || !campaign.additionalCards) {
-    return res.status(404).json({ success: false, message: 'Campaign not found.' });
-  }
-
-  const newCardsList = [];
-  cardIds.forEach((cardId, index) => {
-    const card = campaign.additionalCards.find(c => c.id === cardId);
-    if (card) {
-      newCardsList.push({ ...card, order: index + 1 });
-    }
-  });
-
-  // Attach any un-specified cards at the end
-  campaign.additionalCards.forEach(card => {
-    if (!newCardsList.some(c => c.id === card.id)) {
-      newCardsList.push({ ...card, order: newCardsList.length + 1 });
-    }
-  });
-
-  campaign.additionalCards = newCardsList;
-  writeDB(db);
-
-  res.json({
-    success: true,
-    message: 'Content cards reordered successfully.',
-    additionalCards: campaign.additionalCards
-  });
-});
-
-// Start Standalone Backend Server
 app.listen(PORT, () => {
   console.log(`🐾 Standalone Animal NGO Backend Server running on http://localhost:${PORT}`);
   console.log(`🔑 Admin Auth Endpoint: http://localhost:${PORT}/api/auth/login`);
