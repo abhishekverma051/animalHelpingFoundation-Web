@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const liveDonors = [
   { name: 'Akhil Singh', time: 'Just Now', amount: '₹2,500' },
@@ -8,23 +9,23 @@ const liveDonors = [
   { name: 'Shivam Tripathi', time: 'Just Now', amount: '₹2,800' }
 ];
 
-const blogStories = [
+const fallbackBlogStories = [
   {
-    id: 1,
+    id: 'blog-1',
     tag: 'Animal Rescue | 08/08/2026',
     title: 'What Happens After an Animal Is Rescued?',
     desc: 'From emergency rescue to recovery, discover the journey of an animal receiving care, treatment, and a second chance.',
     image: '/assets/impact3.png'
   },
   {
-    id: 2,
+    id: 'blog-2',
     tag: 'Animal Rescue | 08/08/2026',
     title: 'From the Streets to Safety: A Second Chance',
     desc: 'A look into the story of a rescued animal, the challenges they faced, and the care that helped them recover.',
     image: '/assets/card4_hd.jpg'
   },
   {
-    id: 3,
+    id: 'blog-3',
     tag: 'Animal Rescue | 08/08/2026',
     title: '5 Simple Ways You Can Help Animals in Need',
     desc: 'Small acts of kindness can make a lasting difference. Here are simple ways to support animals in your everyday life.',
@@ -33,6 +34,22 @@ const blogStories = [
 ];
 
 export default function LiveFeedAndStoriesSection() {
+  const [blogs, setBlogs] = useState(fallbackBlogStories);
+
+  useEffect(() => {
+    let isMounted = true;
+    api.getBlogs()
+      .then(res => {
+        if (isMounted && res.blogs && res.blogs.length > 0) {
+          setBlogs(res.blogs);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not fetch dynamic blogs, using fallback stories:', err);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
   return (
     <section className="donors-dark-bg-section">
       <div className="container" style={{ paddingLeft: '80px', paddingRight: '80px' }}>
@@ -92,7 +109,7 @@ export default function LiveFeedAndStoriesSection() {
 
         {/* Blog Cards Grid */}
         <div className="blog-cards-grid">
-          {blogStories.map((story) => (
+          {blogs.map((story) => (
             <div className="blog-card" key={story.id}>
               <img src={story.image} alt={story.title} className="blog-card-img" />
               <div style={{ padding: '20px' }}>
@@ -101,7 +118,7 @@ export default function LiveFeedAndStoriesSection() {
                   {story.title}
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.5 }}>
-                  {story.desc}
+                  {story.desc || story.description}
                 </p>
               </div>
             </div>

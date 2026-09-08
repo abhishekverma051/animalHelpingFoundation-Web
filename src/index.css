@@ -1051,7 +1051,7 @@ a {
   height: 100vh;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(6px);
-  z-index: 1000;
+  z-index: 100000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1066,6 +1066,8 @@ a {
   padding: 28px;
   box-shadow: var(--shadow-lg);
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-close-btn {

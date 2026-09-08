@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, HeartHandshake, LogOut, Shield, ExternalLink, Menu, X } from 'lucide-react';
+import { LayoutDashboard, HeartHandshake, BookOpen, LogOut, Shield, ExternalLink, Menu, X } from 'lucide-react';
 import webLogo from '../../assets/webLogo.png';
 import AdminDashboard from './AdminDashboard';
 import AdminCampaigns from './AdminCampaigns';
+import AdminBlogs from './AdminBlogs';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Exactly two navigation tabs: 'dashboard' | 'campaigns'
+  // Navigation tabs: 'dashboard' | 'campaigns' | 'blogs'
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -54,7 +55,7 @@ export default function AdminLayout() {
 
           {/* Desktop Nav Tabs & User Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            {/* Exactly 2 Navigation Tabs */}
+            {/* 3 Navigation Tabs */}
             <nav className="desktop-tabs" style={{ display: 'flex', gap: '6px', backgroundColor: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '12px' }}>
               <button
                 onClick={() => setActiveTab('dashboard')}
@@ -96,6 +97,27 @@ export default function AdminLayout() {
               >
                 <HeartHandshake size={18} />
                 <span>Campaigns</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('blogs')}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: activeTab === 'blogs' ? '#d32020' : 'transparent',
+                  color: activeTab === 'blogs' ? '#ffffff' : '#94a3b8',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <BookOpen size={18} />
+                <span>Blogs & Stories</span>
               </button>
             </nav>
 
@@ -168,7 +190,6 @@ export default function AdminLayout() {
             onClick={() => setActiveTab('dashboard')}
             style={{
               padding: '14px 4px',
-              borderBottom: activeTab === 'dashboard' ? '3px solid #d32020' : '3px solid transparent',
               color: activeTab === 'dashboard' ? '#d32020' : '#64748b',
               fontWeight: 700,
               fontSize: '0.95rem',
@@ -208,6 +229,28 @@ export default function AdminLayout() {
             <HeartHandshake size={18} />
             <span>2. Campaigns</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('blogs')}
+            style={{
+              padding: '14px 4px',
+              color: activeTab === 'blogs' ? '#d32020' : '#64748b',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              background: 'none',
+              border: 'none',
+              borderBottomWidth: '3px',
+              borderBottomStyle: 'solid',
+              borderBottomColor: activeTab === 'blogs' ? '#d32020' : 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <BookOpen size={18} />
+            <span>3. Blogs & Stories</span>
+          </button>
         </div>
       </div>
 
@@ -215,6 +258,7 @@ export default function AdminLayout() {
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
         {activeTab === 'dashboard' && <AdminDashboard onNavigateCampaigns={() => setActiveTab('campaigns')} />}
         {activeTab === 'campaigns' && <AdminCampaigns />}
+        {activeTab === 'blogs' && <AdminBlogs />}
       </main>
     </div>
   );

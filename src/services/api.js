@@ -135,5 +135,52 @@ export const api = {
       body: JSON.stringify({ cardIds })
     });
     return handleResponse(res, 'Failed to reorder content cards');
+  },
+
+  // Donation APIs
+  createDonation: async (donationData) => {
+    const res = await fetch(`${API_BASE_URL}/donations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(donationData)
+    });
+    return handleResponse(res, 'Failed to process donation');
+  },
+
+  getCampaignDonations: async (campaignId) => {
+    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/donations`);
+    return handleResponse(res, 'Failed to fetch campaign donor list');
+  },
+
+  // Blog / Stories APIs
+  getBlogs: async () => {
+    const res = await fetch(`${API_BASE_URL}/blogs`);
+    return handleResponse(res, 'Failed to fetch blog stories');
+  },
+
+  createBlog: async (blogData) => {
+    const res = await fetch(`${API_BASE_URL}/blogs`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(blogData)
+    });
+    return handleResponse(res, 'Failed to create blog story');
+  },
+
+  updateBlog: async (id, blogData) => {
+    const res = await fetch(`${API_BASE_URL}/blogs/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(blogData)
+    });
+    return handleResponse(res, 'Failed to update blog story');
+  },
+
+  deleteBlog: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/blogs/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return handleResponse(res, 'Failed to delete blog story');
   }
 };

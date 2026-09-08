@@ -131,6 +131,11 @@ const campaignSchema = new mongoose.Schema({
   raisedAmount: { type: Number, default: 0 },
   status: { type: String, enum: ['Active', 'Paused', 'Closed'], default: 'Active' },
   createdAt: { type: String, default: () => new Date().toISOString() },
+  campaignDetails: [{
+    id: String,
+    description: String,
+    image: String
+  }],
   additionalCards: [{
     id: String,
     heading: String,
@@ -152,9 +157,32 @@ const adminSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true }
 });
 
+const donationSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  campaignId: { type: String, required: true },
+  donorName: { type: String, required: true },
+  email: { type: String },
+  phone: { type: String },
+  amount: { type: Number, required: true },
+  isAnonymous: { type: Boolean, default: false },
+  status: { type: String, enum: ['Completed', 'Pending', 'Failed'], default: 'Completed' },
+  createdAt: { type: String, default: () => new Date().toISOString() }
+});
+
+const blogSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  tag: { type: String, required: true },
+  title: { type: String, required: true },
+  desc: { type: String, required: true },
+  image: { type: String, required: true },
+  createdAt: { type: String, default: () => new Date().toISOString() }
+});
+
 const CampaignModel = mongoose.model('Campaign', campaignSchema);
 const FeaturedModel = mongoose.model('Featured', featuredSchema);
 const AdminModel = mongoose.model('Admin', adminSchema);
+const DonationModel = mongoose.model('Donation', donationSchema);
+const BlogModel = mongoose.model('Blog', blogSchema);
 
 // Helper functions for file DB persistence
 const readFileDB = () => {
@@ -163,7 +191,7 @@ const readFileDB = () => {
     return JSON.parse(data);
   } catch (error) {
     console.error('Error reading file database:', error);
-    return { admin: {}, featuredIds: [], campaigns: [] };
+    return { admin: {}, featuredIds: [], campaigns: [], donations: [], blogs: [] };
   }
 };
 
@@ -196,6 +224,9 @@ if (MONGODB_URI) {
         }
         if (initial.admin && initial.admin.email) {
           await AdminModel.create(initial.admin);
+        }
+        if (initial.blogs && initial.blogs.length > 0) {
+          await BlogModel.insertMany(initial.blogs);
         }
         console.log('✅ MongoDB Atlas seeded successfully!');
       }
@@ -461,9 +492,19 @@ app.get('/api/campaigns/:id', async (req, res) => {
     return res.status(404).json({ success: false, message: 'Campaign not found.' });
   }
 
+  const campaignObj = campaign.toObject ? campaign.toObject() : campaign;
+  const campaignDetails = (campaignObj.campaignDetails && campaignObj.campaignDetails.length > 0)
+    ? campaignObj.campaignDetails
+    : (campaignObj.additionalCards || []).map((card) => ({
+        id: card.id,
+        description: card.description || card.heading || '',
+        image: card.image || ''
+      }));
+
   const sortedCampaign = {
-    ...campaign.toObject ? campaign.toObject() : campaign,
-    additionalCards: ((campaign.additionalCards || []).slice()).sort((a, b) => (a.order || 0) - (b.order || 0))
+    ...campaignObj,
+    campaignDetails,
+    additionalCards: ((campaignObj.additionalCards || []).slice()).sort((a, b) => (a.order || 0) - (b.order || 0))
   };
 
   res.json({
@@ -474,11 +515,19 @@ app.get('/api/campaigns/:id', async (req, res) => {
 });
 
 app.post('/api/campaigns', verifyAdminToken, async (req, res) => {
-  const { title, description, image, goalAmount } = req.body;
+  const { title, description, image, goalAmount, campaignDetails } = req.body;
 
   if (!title || !description || !goalAmount) {
     return res.status(400).json({ success: false, message: 'Title, description, and goal amount are required.' });
   }
+
+  const formattedDetails = Array.isArray(campaignDetails)
+    ? campaignDetails.map((det, idx) => ({
+        id: det.id || `det-${Date.now()}-${idx}`,
+        description: sanitizeText(det.description || '').trim(),
+        image: det.image || ''
+      }))
+    : [];
 
   const newCampaign = {
     id: `camp-${Date.now()}`,
@@ -489,7 +538,14 @@ app.post('/api/campaigns', verifyAdminToken, async (req, res) => {
     raisedAmount: 0,
     status: 'Active',
     createdAt: new Date().toISOString(),
-    additionalCards: []
+    campaignDetails: formattedDetails,
+    additionalCards: formattedDetails.map((det, idx) => ({
+      id: det.id,
+      heading: `Highlight #${idx + 1}`,
+      description: det.description,
+      image: det.image,
+      order: idx + 1
+    }))
   };
 
   if (isMongoConnected) {
@@ -509,13 +565,21 @@ app.post('/api/campaigns', verifyAdminToken, async (req, res) => {
 
 app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
-  const { title, description, image, goalAmount, raisedAmount, status } = req.body;
+  const { title, description, image, goalAmount, raisedAmount, status, campaignDetails } = req.body;
 
   if (status && !['Active', 'Paused', 'Closed'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status. Must be Active, Paused, or Closed.' });
   }
 
   let updatedCampaign = null;
+
+  const formattedDetails = campaignDetails !== undefined && Array.isArray(campaignDetails)
+    ? campaignDetails.map((det, idx) => ({
+        id: det.id || `det-${Date.now()}-${idx}`,
+        description: sanitizeText(det.description || '').trim(),
+        image: det.image || ''
+      }))
+    : undefined;
 
   if (isMongoConnected) {
     const existing = await CampaignModel.findOne({ id });
@@ -527,6 +591,16 @@ app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
     if (goalAmount !== undefined) existing.goalAmount = Number(goalAmount);
     if (raisedAmount !== undefined) existing.raisedAmount = Number(raisedAmount);
     if (status !== undefined) existing.status = status;
+    if (formattedDetails !== undefined) {
+      existing.campaignDetails = formattedDetails;
+      existing.additionalCards = formattedDetails.map((det, idx) => ({
+        id: det.id,
+        heading: `Highlight #${idx + 1}`,
+        description: det.description,
+        image: det.image,
+        order: idx + 1
+      }));
+    }
 
     await existing.save();
     updatedCampaign = existing;
@@ -543,7 +617,17 @@ app.put('/api/campaigns/:id', verifyAdminToken, async (req, res) => {
       image: image !== undefined ? image : existing.image,
       goalAmount: goalAmount !== undefined ? Number(goalAmount) : existing.goalAmount,
       raisedAmount: raisedAmount !== undefined ? Number(raisedAmount) : existing.raisedAmount,
-      status: status !== undefined ? status : existing.status
+      status: status !== undefined ? status : existing.status,
+      campaignDetails: formattedDetails !== undefined ? formattedDetails : (existing.campaignDetails || []),
+      additionalCards: formattedDetails !== undefined
+        ? formattedDetails.map((det, idx) => ({
+            id: det.id,
+            heading: `Highlight #${idx + 1}`,
+            description: det.description,
+            image: det.image,
+            order: idx + 1
+          }))
+        : existing.additionalCards
     };
     db.campaigns[index] = updatedCampaign;
     writeFileDB(db);
@@ -710,6 +794,207 @@ app.delete('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res
     success: true,
     message: 'Content card deleted successfully.',
     additionalCards
+  });
+});
+
+// -------------------------------------------------------------
+// DONATION ROUTES
+// -------------------------------------------------------------
+app.post('/api/donations', async (req, res) => {
+  const { campaignId, donorName, email, phone, amount, isAnonymous } = req.body;
+
+  if (!campaignId || !amount || Number(amount) <= 0) {
+    return res.status(400).json({ success: false, message: 'Valid campaignId and donation amount are required.' });
+  }
+
+  const cleanName = donorName ? sanitizeText(donorName).trim() : 'Kind Heart';
+  const cleanEmail = email ? sanitizeText(email).trim() : '';
+  const cleanPhone = phone ? sanitizeText(phone).trim() : '';
+  const parsedAmount = Number(amount);
+  const anonymousFlag = Boolean(isAnonymous);
+
+  const newDonation = {
+    id: `don-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    campaignId,
+    donorName: cleanName,
+    email: cleanEmail,
+    phone: cleanPhone,
+    amount: parsedAmount,
+    isAnonymous: anonymousFlag,
+    status: 'Completed',
+    createdAt: new Date().toISOString()
+  };
+
+  if (isMongoConnected) {
+    await DonationModel.create(newDonation);
+    const campaign = await CampaignModel.findOne({ id: campaignId });
+    if (campaign) {
+      campaign.raisedAmount = Number(campaign.raisedAmount || 0) + parsedAmount;
+      await campaign.save();
+    }
+  } else {
+    const db = readFileDB();
+    if (!db.donations) db.donations = [];
+    db.donations.unshift(newDonation);
+
+    const campaign = (db.campaigns || []).find(c => c.id === campaignId);
+    if (campaign) {
+      campaign.raisedAmount = Number(campaign.raisedAmount || 0) + parsedAmount;
+    }
+    writeFileDB(db);
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Thank you for your generous donation!',
+    donation: {
+      id: newDonation.id,
+      campaignId: newDonation.campaignId,
+      donorName: anonymousFlag ? 'Anonymous' : newDonation.donorName,
+      amount: newDonation.amount,
+      isAnonymous: anonymousFlag,
+      createdAt: newDonation.createdAt
+    }
+  });
+});
+
+app.get('/api/campaigns/:id/donations', async (req, res) => {
+  const { id } = req.params;
+  let campaignDonations = [];
+
+  if (isMongoConnected) {
+    campaignDonations = await DonationModel.find({ campaignId: id, status: 'Completed' }).sort({ createdAt: -1 });
+  } else {
+    const db = readFileDB();
+    const all = db.donations || [];
+    campaignDonations = all.filter(d => d.campaignId === id && d.status === 'Completed');
+  }
+
+  const publicDonations = campaignDonations.map(d => {
+    const item = d.toObject ? d.toObject() : d;
+    return {
+      id: item.id,
+      campaignId: item.campaignId,
+      donorName: item.isAnonymous ? 'Anonymous' : item.donorName,
+      amount: item.amount,
+      isAnonymous: Boolean(item.isAnonymous),
+      createdAt: item.createdAt
+    };
+  });
+
+  res.json({
+    success: true,
+    donations: publicDonations
+  });
+});
+
+// -------------------------------------------------------------
+// BLOG / STORY ROUTES
+// -------------------------------------------------------------
+app.get('/api/blogs', async (req, res) => {
+  let blogs = [];
+  if (isMongoConnected) {
+    blogs = await BlogModel.find().sort({ createdAt: -1 });
+  } else {
+    const db = readFileDB();
+    blogs = db.blogs || [];
+  }
+  res.json({
+    success: true,
+    blogs
+  });
+});
+
+app.post('/api/blogs', verifyAdminToken, async (req, res) => {
+  const { tag, title, desc, image } = req.body;
+
+  if (!title || !desc) {
+    return res.status(400).json({ success: false, message: 'Title and description are required for blog stories.' });
+  }
+
+  const newBlog = {
+    id: `blog-${Date.now()}`,
+    tag: tag ? sanitizeText(tag).trim() : 'Animal Rescue | ' + new Date().toLocaleDateString('en-GB'),
+    title: sanitizeText(title).trim(),
+    desc: sanitizeText(desc).trim(),
+    image: image || '/assets/impact3.png',
+    createdAt: new Date().toISOString()
+  };
+
+  if (isMongoConnected) {
+    await BlogModel.create(newBlog);
+  } else {
+    const db = readFileDB();
+    if (!db.blogs) db.blogs = [];
+    db.blogs.unshift(newBlog);
+    writeFileDB(db);
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Blog story created successfully.',
+    blog: newBlog
+  });
+});
+
+app.put('/api/blogs/:id', verifyAdminToken, async (req, res) => {
+  const { id } = req.params;
+  const { tag, title, desc, image } = req.body;
+
+  let updatedBlog = null;
+
+  if (isMongoConnected) {
+    const existing = await BlogModel.findOne({ id });
+    if (!existing) return res.status(404).json({ success: false, message: 'Blog story not found.' });
+
+    if (tag !== undefined) existing.tag = sanitizeText(tag).trim();
+    if (title !== undefined) existing.title = sanitizeText(title).trim();
+    if (desc !== undefined) existing.desc = sanitizeText(desc).trim();
+    if (image !== undefined) existing.image = image;
+
+    await existing.save();
+    updatedBlog = existing;
+  } else {
+    const db = readFileDB();
+    if (!db.blogs) db.blogs = [];
+    const index = db.blogs.findIndex(b => b.id === id);
+    if (index === -1) return res.status(404).json({ success: false, message: 'Blog story not found.' });
+
+    const existing = db.blogs[index];
+    updatedBlog = {
+      ...existing,
+      tag: tag !== undefined ? sanitizeText(tag).trim() : existing.tag,
+      title: title !== undefined ? sanitizeText(title).trim() : existing.title,
+      desc: desc !== undefined ? sanitizeText(desc).trim() : existing.desc,
+      image: image !== undefined ? image : existing.image
+    };
+    db.blogs[index] = updatedBlog;
+    writeFileDB(db);
+  }
+
+  res.json({
+    success: true,
+    message: 'Blog story updated successfully.',
+    blog: updatedBlog
+  });
+});
+
+app.delete('/api/blogs/:id', verifyAdminToken, async (req, res) => {
+  const { id } = req.params;
+
+  if (isMongoConnected) {
+    await BlogModel.deleteOne({ id });
+  } else {
+    const db = readFileDB();
+    if (db.blogs) {
+      db.blogs = db.blogs.filter(b => b.id !== id);
+      writeFileDB(db);
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Blog story deleted successfully.'
   });
 });
 

@@ -35,6 +35,7 @@ export default function AdminCampaigns() {
   const [goalAmount, setGoalAmount] = useState('');
   const [raisedAmount, setRaisedAmount] = useState('');
   const [status, setStatus] = useState('Active');
+  const [campaignDetails, setCampaignDetails] = useState([{ image: '', description: '' }]);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
 
@@ -85,6 +86,7 @@ export default function AdminCampaigns() {
     setGoalAmount('');
     setRaisedAmount('0');
     setStatus('Active');
+    setCampaignDetails([{ image: '', description: '' }]);
     setModalError('');
     setCampaignModalOpen(true);
   };
@@ -98,8 +100,33 @@ export default function AdminCampaigns() {
     setGoalAmount(camp.goalAmount || '');
     setRaisedAmount(camp.raisedAmount || 0);
     setStatus(camp.status || 'Active');
+    const initialDetails = (camp.campaignDetails && camp.campaignDetails.length > 0)
+      ? camp.campaignDetails.map(d => ({ image: d.image || '', description: d.description || '' }))
+      : (camp.additionalCards && camp.additionalCards.length > 0)
+        ? camp.additionalCards.map(c => ({ image: c.image || '', description: c.description || c.heading || '' }))
+        : [{ image: '', description: '' }];
+    setCampaignDetails(initialDetails);
     setModalError('');
     setCampaignModalOpen(true);
+  };
+
+  const handleAddDetailEntry = () => {
+    setCampaignDetails(prev => [...prev, { image: '', description: '' }]);
+  };
+
+  const handleUpdateDetailEntry = (index, field, value) => {
+    setCampaignDetails(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleRemoveDetailEntry = (index) => {
+    setCampaignDetails(prev => {
+      if (prev.length <= 1) return [{ image: '', description: '' }];
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   // Save Campaign (Create / Update)
@@ -112,6 +139,10 @@ export default function AdminCampaigns() {
       return;
     }
 
+    const validDetails = campaignDetails
+      .filter(d => d.description.trim() || d.image.trim())
+      .map(d => ({ description: d.description.trim(), image: d.image.trim() }));
+
     try {
       setSaving(true);
       if (editingCampaign) {
@@ -122,7 +153,8 @@ export default function AdminCampaigns() {
           image: image.trim(),
           goalAmount: Number(goalAmount),
           raisedAmount: Number(raisedAmount),
-          status
+          status,
+          campaignDetails: validDetails
         });
         showSuccess('Campaign updated successfully!');
       } else {
@@ -131,7 +163,8 @@ export default function AdminCampaigns() {
           title: title.trim(),
           description: description.trim(),
           image: image.trim(),
-          goalAmount: Number(goalAmount)
+          goalAmount: Number(goalAmount),
+          campaignDetails: validDetails
         });
         showSuccess('New campaign created successfully!');
       }
@@ -769,6 +802,126 @@ export default function AdminCampaigns() {
                     />
                   </div>
                 )}
+              </div>
+
+              {/* Campaign Details Section */}
+              <div style={{
+                marginBottom: '24px',
+                padding: '20px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Campaign Details
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>
+                    Add multiple description & image entries to tell the campaign story on the details page.
+                  </p>
+                </div>
+
+                {campaignDetails.map((detail, idx) => (
+                  <div key={idx} style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#d32020' }}>
+                        Detail Entry #{idx + 1}
+                      </span>
+                      {campaignDetails.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDetailEntry(idx)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#dc2626',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                        Image
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="Upload or enter Image URL (e.g. https://...)"
+                        value={detail.image}
+                        onChange={(e) => handleUpdateDetailEntry(idx, 'image', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                        Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Enter description describing the campaign highlight, story, impact, etc..."
+                        value={detail.description}
+                        onChange={(e) => handleUpdateDetailEntry(idx, 'description', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={handleAddDetailEntry}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#ffffff',
+                    border: '2px dashed #d32020',
+                    color: '#d32020',
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Plus size={18} />
+                  <span>Add More</span>
+                </button>
               </div>
 
               {editingCampaign && (

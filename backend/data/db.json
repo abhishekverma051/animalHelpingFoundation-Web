@@ -14,6 +14,44 @@
   ],
   "campaigns": [
     {
+      "id": "camp-1788869931491",
+      "title": "test",
+      "description": "djnsm dfnsfjnjknmf,ndsmfnjksfd",
+      "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
+      "goalAmount": 1000000,
+      "raisedAmount": 0,
+      "status": "Active",
+      "createdAt": "2026-09-08T12:18:51.491Z",
+      "campaignDetails": [
+        {
+          "id": "det-1788869931491-0",
+          "description": "sndjhsdsjkdbfjhsdbfjsdbjjdsf",
+          "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "det-1788869931491-1",
+          "description": "jknsdjndfsjknsdfjkndsfjnksdfjjfk",
+          "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80"
+        }
+      ],
+      "additionalCards": [
+        {
+          "id": "det-1788869931491-0",
+          "heading": "Highlight #1",
+          "description": "sndjhsdsjkdbfjhsdbfjsdbjjdsf",
+          "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
+          "order": 1
+        },
+        {
+          "id": "det-1788869931491-1",
+          "heading": "Highlight #2",
+          "description": "jknsdjndfsjknsdfjkndsfjnksdfjjfk",
+          "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
+          "order": 2
+        }
+      ]
+    },
+    {
       "id": "camp-1788764437279",
       "title": "tesrtt",
       "description": "jnjnkjknjknjnkjkn",
@@ -30,7 +68,7 @@
       "description": "Providing urgent medical treatment, life-saving surgeries, and intensive ICU care for street animals hit by vehicles or critical illnesses.",
       "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
       "goalAmount": 500000,
-      "raisedAmount": 385000,
+      "raisedAmount": 390000,
       "status": "Active",
       "createdAt": "2026-08-01T10:00:00Z",
       "additionalCards": [
@@ -142,6 +180,84 @@
       "status": "Paused",
       "createdAt": "2026-08-25T16:45:00Z",
       "additionalCards": []
+    }
+  ],
+  "donations": [
+    {
+      "id": "don-1788870407474-619",
+      "campaignId": "camp-1",
+      "donorName": "ffff",
+      "email": "f@h.com",
+      "amount": 5000,
+      "isAnonymous": true,
+      "status": "Completed",
+      "createdAt": "2026-09-08T12:26:47.475Z"
+    },
+    {
+      "id": "don-101",
+      "campaignId": "camp-1",
+      "donorName": "John Doe",
+      "email": "john@example.com",
+      "amount": 5000,
+      "isAnonymous": false,
+      "status": "Completed",
+      "createdAt": "2026-09-01T10:00:00.000Z"
+    },
+    {
+      "id": "don-102",
+      "campaignId": "camp-1",
+      "donorName": "Sarah Williams",
+      "email": "sarah@example.com",
+      "amount": 2500,
+      "isAnonymous": true,
+      "status": "Completed",
+      "createdAt": "2026-09-02T11:30:00.000Z"
+    },
+    {
+      "id": "don-103",
+      "campaignId": "camp-1",
+      "donorName": "Rahul Sharma",
+      "email": "rahul@example.com",
+      "amount": 1000,
+      "isAnonymous": false,
+      "status": "Completed",
+      "createdAt": "2026-09-03T14:15:00.000Z"
+    },
+    {
+      "id": "don-104",
+      "campaignId": "camp-1",
+      "donorName": "Priya Patel",
+      "email": "priya@example.com",
+      "amount": 1000,
+      "isAnonymous": true,
+      "status": "Completed",
+      "createdAt": "2026-09-04T16:20:00.000Z"
+    }
+  ],
+  "blogs": [
+    {
+      "id": "blog-1",
+      "tag": "Animal Rescue | 08/08/2026",
+      "title": "What Happens After an Animal Is Rescued?",
+      "desc": "From emergency rescue to recovery, discover the journey of an animal receiving care, treatment, and a second chance.",
+      "image": "/assets/impact3.png",
+      "createdAt": "2026-08-08T10:00:00.000Z"
+    },
+    {
+      "id": "blog-2",
+      "tag": "Animal Rescue | 08/08/2026",
+      "title": "From the Streets to Safety: A Second Chance",
+      "desc": "A look into the story of a rescued animal, the challenges they faced, and the care that helped them recover.",
+      "image": "/assets/card4_hd.jpg",
+      "createdAt": "2026-08-08T11:00:00.000Z"
+    },
+    {
+      "id": "blog-3",
+      "tag": "Animal Rescue | 08/08/2026",
+      "title": "5 Simple Ways You Can Help Animals in Need",
+      "desc": "Small acts of kindness can make a lasting difference. Here are simple ways to support animals in your everyday life.",
+      "image": "/assets/impact2.png",
+      "createdAt": "2026-08-08T12:00:00.000Z"
     }
   ]
 }
