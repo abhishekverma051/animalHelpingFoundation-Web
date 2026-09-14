@@ -15,6 +15,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
     phone: '',
     paymentMethod: 'upi'
   });
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState('');
 
   React.useEffect(() => {
     if (isOpen && initialAmount) {
@@ -30,6 +31,20 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
   }, [initialAmount, isOpen]);
 
   if (!isOpen) return null;
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const handleAmountClick = (amt) => {
     setSelectedAmount(amt);
@@ -51,27 +66,100 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
       return;
     }
 
+    if (!isAnonymous && (!formData.name || !formData.name.trim())) {
+      setError('Please enter your full name.');
+      return;
+    }
+
+    if (!isAnonymous && (!formData.email || !formData.email.trim())) {
+      setError('Please enter your email address.');
+      return;
+    }
+
     if (!formData.phone || formData.phone.trim().length < 8) {
       setError('Please enter a valid contact number.');
       return;
     }
 
+    const effectiveDonorName = isAnonymous ? 'Anonymous' : (formData.name ? formData.name.trim() : 'Kind Heart');
+    const effectiveEmail = formData.email ? formData.email.trim() : '';
+
     try {
       setSubmitting(true);
-      await api.createDonation({
-        campaignId: campaign ? campaign.id : 'camp-1',
-        donorName: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        amount: numericAmt,
-        isAnonymous
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setError('Razorpay payment gateway failed to load. Please check your internet connection and try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 1: Create Order on Backend
+      const orderRes = await api.createRazorpayOrder(numericAmt, campaign ? campaign.id : 'camp-1');
+      if (!orderRes || !orderRes.order) {
+        throw new Error(orderRes.message || 'Could not initiate Razorpay payment order.');
+      }
+
+      // Step 2: Launch Razorpay Checkout Popup
+      const options = {
+        key: orderRes.key || 'rzp_live_TbxI4yt7rPj7yi',
+        amount: orderRes.order.amount,
+        currency: orderRes.order.currency || 'INR',
+        name: 'Animal Helping Foundation',
+        description: campaign ? `Donation for ${campaign.title}` : 'Support Stray Animal Care & Medical Relief',
+        image: 'https://animalhelpingfoundation.org/assets/webLogo.png',
+        order_id: orderRes.order.id,
+        prefill: {
+          name: effectiveDonorName,
+          email: effectiveEmail,
+          contact: formData.phone
+        },
+        theme: {
+          color: '#d32020'
+        },
+        handler: async function (response) {
+          try {
+            // Step 3: Verify Payment Signature on Backend
+            const verifyRes = await api.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              campaignId: campaign ? campaign.id : 'camp-1',
+              donorName: effectiveDonorName,
+              email: effectiveEmail,
+              phone: formData.phone,
+              amount: numericAmt,
+              isAnonymous
+            });
+
+            setRazorpayPaymentId(response.razorpay_payment_id);
+            setSubmitted(true);
+            if (onSuccess) onSuccess();
+          } catch (verifyErr) {
+            console.error('Payment Verification Failed:', verifyErr);
+            setError(verifyErr.message || 'Payment verification failed. If money was deducted, please contact us.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitting(false);
+          }
+        }
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', function (resp) {
+        console.error('Razorpay Payment Failed:', resp);
+        setError(resp.error?.description || 'Payment failed or was cancelled. Please try again.');
+        setSubmitting(false);
       });
-      setSubmitted(true);
-      if (onSuccess) onSuccess();
+
+      razorpayInstance.open();
     } catch (err) {
-      console.error('Donation submit error:', err);
+      console.error('Donation error:', err);
       setError(err.message || 'Failed to process donation.');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -156,12 +244,12 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <User size={15} color="#d32020" />
-                  <span>Full Name *</span>
+                  <span>Full Name {isAnonymous ? '(Optional)' : '*'}</span>
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Rahul Sharma"
+                  required={!isAnonymous}
+                  placeholder={isAnonymous ? "Anonymous Donor (Optional)" : "e.g. Rahul Sharma"}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
@@ -171,12 +259,12 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Mail size={15} color="#d32020" />
-                  <span>Email Address *</span>
+                  <span>Email Address {isAnonymous ? '(Optional)' : '*'}</span>
                 </label>
                 <input
                   type="email"
-                  required
-                  placeholder="e.g. rahul@example.com"
+                  required={!isAnonymous}
+                  placeholder={isAnonymous ? "Optional for receipt" : "e.g. rahul@example.com"}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -240,7 +328,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
                 }}
               >
                 <Heart size={18} fill="#ffffff" />
-                <span>{submitting ? 'Processing Donation...' : `Donate ${finalAmount}`}</span>
+                <span>{submitting ? 'Opening Razorpay Payment...' : `Proceed to Pay ${finalAmount}`}</span>
               </button>
             </form>
           </>
@@ -252,14 +340,32 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
             <h3 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px', color: '#0f172a' }}>
               Thank You, {isAnonymous ? 'Kind Supporter' : (formData.name || 'Kind Heart')}! 🎉
             </h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.6 }}>
-              Your generous contribution of <strong>{finalAmount}</strong> has been successfully received! You are directly saving lives and helping stray animals.
-              {isAnonymous && (
-                <span style={{ display: 'block', marginTop: '10px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', padding: '10px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700 }}>
-                  🔒 Your identity remains private and will display as "Anonymous" on the donor list.
-                </span>
-              )}
+            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '16px', lineHeight: 1.6 }}>
+              Your generous contribution of <strong>{finalAmount}</strong> has been successfully received via Razorpay! You are directly saving lives and helping stray animals.
             </p>
+
+            {razorpayPaymentId && (
+              <div style={{
+                backgroundColor: '#f1f5f9',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                fontSize: '0.82rem',
+                color: '#334155',
+                marginBottom: '20px',
+                fontWeight: 600,
+                textAlign: 'center',
+                fontFamily: 'monospace'
+              }}>
+                Razorpay Payment ID: <strong>{razorpayPaymentId}</strong>
+              </div>
+            )}
+
+            {isAnonymous && (
+              <div style={{ marginBottom: '20px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', padding: '10px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700 }}>
+                🔒 Your identity remains private and will display as "Anonymous" on the donor list.
+              </div>
+            )}
+
             <button 
               className="btn-submit-donation"
               onClick={() => {

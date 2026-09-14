@@ -25,6 +25,22 @@ const handleResponse = async (res, defaultErrorMessage) => {
 };
 
 export const api = {
+  // Image Upload API
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('admin_token');
+    const res = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: formData
+    });
+    return handleResponse(res, 'Failed to upload image from device');
+  },
+
   // Auth APIs
   login: async (email, password) => {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -137,7 +153,7 @@ export const api = {
     return handleResponse(res, 'Failed to reorder content cards');
   },
 
-  // Donation APIs
+  // Donation & Payment APIs
   createDonation: async (donationData) => {
     const res = await fetch(`${API_BASE_URL}/donations`, {
       method: 'POST',
@@ -150,6 +166,33 @@ export const api = {
   getCampaignDonations: async (campaignId) => {
     const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/donations`);
     return handleResponse(res, 'Failed to fetch campaign donor list');
+  },
+
+  // Razorpay Payment Gateway APIs
+  createRazorpayOrder: async (amount, campaignId) => {
+    const res = await fetch(`${API_BASE_URL}/razorpay/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, campaignId })
+    });
+    return handleResponse(res, 'Failed to create Razorpay payment order');
+  },
+
+  verifyRazorpayPayment: async (paymentData) => {
+    const res = await fetch(`${API_BASE_URL}/razorpay/verify-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paymentData)
+    });
+    return handleResponse(res, 'Payment verification failed');
+  },
+
+  getAdminDonations: async (campaignId = null) => {
+    const url = campaignId ? `${API_BASE_URL}/admin/donations?campaignId=${campaignId}` : `${API_BASE_URL}/admin/donations`;
+    const res = await fetch(url, {
+      headers: getAuthHeaders()
+    });
+    return handleResponse(res, 'Failed to fetch admin donations list');
   },
 
   // Blog / Stories APIs

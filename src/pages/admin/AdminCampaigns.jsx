@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import AdminContentCardsModal from './AdminContentCardsModal';
+import ImageUploader from '../../components/ImageUploader';
 
 export default function AdminCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
@@ -178,7 +179,25 @@ export default function AdminCampaigns() {
     }
   };
 
-  // Request status change confirmation dialog (Pause or Close or Delete)
+  // Payment Logs Modal state
+  const [paymentsModalCampaign, setPaymentsModalCampaign] = useState(null);
+  const [campaignDonationsList, setCampaignDonationsList] = useState([]);
+  const [donationsLoading, setDonationsLoading] = useState(false);
+
+  const handleOpenPaymentsModal = async (camp) => {
+    setPaymentsModalCampaign(camp);
+    try {
+      setDonationsLoading(true);
+      const res = await api.getAdminDonations(camp.id);
+      setCampaignDonationsList(res.donations || []);
+    } catch (err) {
+      console.error('Error fetching admin donations:', err);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  // Request status change confirmation dialog (Pause or Close or Delete or Reactivate)
   const triggerPauseConfirmation = (camp) => {
     setConfirmModalState({
       isOpen: true,
@@ -188,6 +207,18 @@ export default function AdminCampaigns() {
       message: 'Pausing this campaign will temporarily stop accepting new online donations while keeping the campaign visible. You can reactivate it anytime.',
       confirmText: 'Pause Campaign',
       type: 'warning'
+    });
+  };
+
+  const triggerReactivateConfirmation = (camp) => {
+    setConfirmModalState({
+      isOpen: true,
+      campaignId: camp.id,
+      targetStatus: 'Active',
+      title: `Reactivate "${camp.title}"?`,
+      message: 'Reactivating this campaign will allow users to make online donations again.',
+      confirmText: 'Reactivate Campaign',
+      type: 'info'
     });
   };
 
@@ -209,8 +240,8 @@ export default function AdminCampaigns() {
       campaignId: camp.id,
       targetStatus: 'DELETE',
       title: `Delete "${camp.title}"?`,
-      message: 'Are you sure you want to permanently delete this campaign? This action cannot be undone.',
-      confirmText: 'Delete Campaign',
+      message: 'Are you sure you want to permanently delete this campaign? This action cannot be undone and will remove it from the website.',
+      confirmText: 'Permanently Delete Campaign',
       type: 'danger'
     });
   };
@@ -436,16 +467,21 @@ export default function AdminCampaigns() {
             const sStyle = statusStyles[camp.status] || statusStyles.Active;
 
             return (
-              <div key={camp.id} style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '20px',
-                border: '1px solid #e2e8f0',
-                overflow: 'hidden',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.03)',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-              }}>
+              <div 
+                key={camp.id} 
+                onClick={() => window.open(`/campaign/${camp.id}?fromAdmin=true`, '_blank')}
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '20px',
+                  border: '1px solid #e2e8f0',
+                  overflow: 'hidden',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  cursor: 'pointer'
+                }}
+              >
                 {/* Image & Status Badge */}
                 <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
                   <img 
@@ -471,26 +507,28 @@ export default function AdminCampaigns() {
                   </div>
 
                   <a
-                    href={`/campaign/${camp.id}`}
+                    href={`/campaign/${camp.id}?fromAdmin=true`}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       position: 'absolute',
                       bottom: '12px',
                       left: '12px',
-                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.85)',
                       color: '#ffffff',
-                      padding: '4px 10px',
+                      padding: '5px 12px',
                       borderRadius: '8px',
                       fontSize: '0.75rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       textDecoration: 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '5px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                     }}
                   >
-                    <span>View Public Page</span>
+                    <span>View Campaign Page</span>
                     <ExternalLink size={12} />
                   </a>
                 </div>
@@ -539,7 +577,10 @@ export default function AdminCampaigns() {
                         {camp.additionalCards?.length || 0} Content Cards Attached
                       </span>
                       <button
-                        onClick={() => setContentCardsModalCampaign(camp)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setContentCardsModalCampaign(camp);
+                        }}
                         style={{
                           fontSize: '0.8rem',
                           fontWeight: 700,
@@ -554,73 +595,137 @@ export default function AdminCampaigns() {
                       </button>
                     </div>
 
-                    {/* Card Actions */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                    {/* View Payments Log Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPaymentsModal(camp);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        backgroundColor: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        borderRadius: '12px',
+                        fontWeight: 700,
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        marginBottom: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <CheckCircle2 size={16} />
+                      <span>View Payments & Razorpay IDs</span>
+                    </button>
+
+                    {/* Card Actions (Edit, Pause/Reactivate, Delete) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
                       <button
-                        onClick={() => handleOpenEditModal(camp)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(camp);
+                        }}
+                        title="Edit Campaign"
                         style={{
-                          padding: '8px 12px',
+                          padding: '8px 6px',
                           backgroundColor: '#f1f5f9',
                           color: '#334155',
                           borderRadius: '10px',
                           fontWeight: 700,
-                          fontSize: '0.82rem',
+                          fontSize: '0.8rem',
                           border: 'none',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '6px'
+                          gap: '4px'
                         }}
                       >
-                        <Edit3 size={15} />
+                        <Edit3 size={14} />
                         <span>Edit</span>
                       </button>
 
                       {camp.status === 'Active' ? (
                         <button
-                          onClick={() => triggerPauseConfirmation(camp)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerPauseConfirmation(camp);
+                          }}
+                          title="Pause Campaign"
                           style={{
-                            padding: '8px 12px',
+                            padding: '8px 6px',
                             backgroundColor: '#fffbeb',
                             color: '#b45309',
                             borderRadius: '10px',
                             fontWeight: 700,
-                            fontSize: '0.82rem',
+                            fontSize: '0.8rem',
                             border: '1px solid #fef3c7',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px'
+                            gap: '4px'
                           }}
                         >
-                          <PauseCircle size={15} />
+                          <PauseCircle size={14} />
                           <span>Pause</span>
                         </button>
                       ) : (
                         <button
-                          onClick={() => triggerCloseConfirmation(camp)}
-                          disabled={camp.status === 'Closed'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerReactivateConfirmation(camp);
+                          }}
+                          title="Reactivate Campaign"
                           style={{
-                            padding: '8px 12px',
-                            backgroundColor: camp.status === 'Closed' ? '#f3f4f6' : '#fef2f2',
-                            color: camp.status === 'Closed' ? '#9ca3af' : '#dc2626',
+                            padding: '8px 6px',
+                            backgroundColor: '#ecfdf5',
+                            color: '#059669',
                             borderRadius: '10px',
                             fontWeight: 700,
-                            fontSize: '0.82rem',
-                            border: 'none',
-                            cursor: camp.status === 'Closed' ? 'not-allowed' : 'pointer',
+                            fontSize: '0.8rem',
+                            border: '1px solid #a7f3d0',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px'
+                            gap: '4px'
                           }}
                         >
-                          <XCircle size={15} />
-                          <span>{camp.status === 'Closed' ? 'Closed' : 'Close'}</span>
+                          <CheckCircle2 size={14} />
+                          <span>Activate</span>
                         </button>
                       )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerDeleteConfirmation(camp);
+                        }}
+                        title="Delete Campaign"
+                        style={{
+                          padding: '8px 6px',
+                          backgroundColor: '#fef2f2',
+                          color: '#dc2626',
+                          borderRadius: '10px',
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          border: '1px solid #fecaca',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Trash2 size={14} />
+                        <span>Delete</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -738,23 +843,11 @@ export default function AdminCampaigns() {
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Campaign Image URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/photo-..."
+                <ImageUploader
+                  label="Campaign Cover Image"
                   value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
+                  onChange={setImage}
+                  placeholder="Choose an image file from your device or paste a URL"
                 />
               </div>
 
@@ -856,23 +949,11 @@ export default function AdminCampaigns() {
                     </div>
 
                     <div style={{ marginBottom: '12px' }}>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Image
-                      </label>
-                      <input
-                        type="url"
-                        placeholder="Upload or enter Image URL (e.g. https://...)"
+                      <ImageUploader
+                        label="Detail Entry Image"
                         value={detail.image}
-                        onChange={(e) => handleUpdateDetailEntry(idx, 'image', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '0.9rem',
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
+                        onChange={(url) => handleUpdateDetailEntry(idx, 'image', url)}
+                        placeholder="Choose an image file from device or paste a URL"
                       />
                     </div>
 
@@ -1008,6 +1089,126 @@ export default function AdminCampaigns() {
           onRefresh={loadCampaigns}
         />
       )}
+
+      {/* PAYMENTS LOG MODAL */}
+      {paymentsModalCampaign && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
+            maxWidth: '680px',
+            width: '100%',
+            maxHeight: '88vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+            animation: 'modalSlideUp 0.25s ease-out'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                  Donation Payments & Razorpay Logs
+                </h3>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  {paymentsModalCampaign.title}
+                </span>
+              </div>
+              <button
+                onClick={() => setPaymentsModalCampaign(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+              {donationsLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  Loading payment logs...
+                </div>
+              ) : campaignDonationsList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '2px dashed #cbd5e1' }}>
+                  <p style={{ fontWeight: 700, color: '#334155', margin: 0 }}>No Online Payments Received Yet</p>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
+                    New online donations made via Razorpay will appear here automatically.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {campaignDonationsList.map((don) => (
+                    <div key={don.id} style={{
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '14px',
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '16px'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>
+                            {don.isAnonymous ? 'Anonymous Donor 🔒' : (don.donorName || 'Kind Heart')}
+                          </span>
+                          <span style={{
+                            backgroundColor: '#dcfce7',
+                            color: '#15803d',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '9999px'
+                          }}>
+                            {don.status || 'Completed'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                          {don.email && <span>📧 {don.email} | </span>}
+                          {don.phone && <span>📞 {don.phone} | </span>}
+                          <span>📅 {new Date(don.createdAt).toLocaleString()}</span>
+                        </div>
+                        {don.razorpayPaymentId && (
+                          <div style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: '#2563eb', fontWeight: 700, marginTop: '4px' }}>
+                            Razorpay ID: {don.razorpayPaymentId}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#059669', flexShrink: 0 }}>
+                        +₹{Number(don.amount).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

@@ -13,6 +13,7 @@ import {
   Layers,
   X
 } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 export default function AdminDashboard({ onNavigateCampaigns }) {
   const [stats, setStats] = useState(null);
@@ -27,6 +28,13 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
   const [tempFeaturedIds, setTempFeaturedIds] = useState([]);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  // Confirmation Modal state for unfeaturing a campaign
+  const [unfeatureConfirmState, setUnfeatureConfirmState] = useState({
+    isOpen: false,
+    campaign: null,
+    loading: false
+  });
 
   const loadDashboardData = async () => {
     try {
@@ -101,16 +109,32 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
     }
   };
 
-  // Quick remove featured campaign directly from dashboard card
-  const handleRemoveFeatured = async (id) => {
-    const updated = featuredIds.filter(fId => fId !== id);
+  // Trigger confirmation modal before unfeaturing
+  const triggerRemoveFeaturedConfirm = (e, campaign) => {
+    e.stopPropagation(); // Prevent card navigation
+    setUnfeatureConfirmState({
+      isOpen: true,
+      campaign,
+      loading: false
+    });
+  };
+
+  // Confirm remove featured campaign
+  const handleConfirmRemoveFeatured = async () => {
+    const campaign = unfeatureConfirmState.campaign;
+    if (!campaign) return;
+
     try {
+      setUnfeatureConfirmState(prev => ({ ...prev, loading: true }));
+      const updated = featuredIds.filter(fId => fId !== campaign.id);
       const res = await api.updateFeatured(updated);
       setFeaturedIds(res.featuredIds);
-      showSuccess('Campaign unfeatured.');
+      showSuccess(`"${campaign.title}" has been removed from Featured Campaigns.`);
+      setUnfeatureConfirmState({ isOpen: false, campaign: null, loading: false });
       loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to remove featured campaign.');
+      setUnfeatureConfirmState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -415,16 +439,22 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
             {featuredCampaignsList.map((campaign, idx) => {
               const percent = Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100));
               return (
-                <div key={campaign.id} style={{
-                  backgroundColor: '#ffffff',
-                  border: '2px solid #fef3c7',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
+                <div 
+                  key={campaign.id} 
+                  onClick={() => window.open(`/campaign/${campaign.id}?fromAdmin=true`, '_blank')}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '2px solid #fef3c7',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                  }}
+                >
                   {/* Badge position */}
                   <div style={{
                     position: 'absolute',
@@ -443,6 +473,26 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
                   }}>
                     <Star size={12} fill="#ffffff" />
                     Featured #{idx + 1}
+                  </div>
+
+                  {/* View Page Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                    color: '#ffffff',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    zIndex: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span>View Page</span>
+                    <ArrowUpRight size={12} />
                   </div>
 
                   <div style={{ height: '150px', position: 'relative', overflow: 'hidden' }}>
@@ -470,7 +520,7 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
 
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, marginBottom: '6px' }}>
-                        <span color="#059669">{formatCurrency(campaign.raisedAmount)}</span>
+                        <span style={{ color: '#059669' }}>{formatCurrency(campaign.raisedAmount)}</span>
                         <span style={{ color: '#64748b' }}>{percent}% of {formatCurrency(campaign.goalAmount)}</span>
                       </div>
                       <div style={{ height: '6px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden', marginBottom: '14px' }}>
@@ -478,7 +528,7 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
                       </div>
 
                       <button
-                        onClick={() => handleRemoveFeatured(campaign.id)}
+                        onClick={(e) => triggerRemoveFeaturedConfirm(e, campaign)}
                         style={{
                           width: '100%',
                           padding: '8px 12px',
@@ -698,6 +748,18 @@ export default function AdminDashboard({ onNavigateCampaigns }) {
           </div>
         </div>
       )}
+      {/* UNFEATURE CAMPAIGN CONFIRMATION MODAL */}
+      <ConfirmationModal
+        isOpen={unfeatureConfirmState.isOpen}
+        title="Remove from Featured Campaigns?"
+        message={`Are you sure you want to remove "${unfeatureConfirmState.campaign?.title}" from Featured Campaigns? It will no longer appear in the hero carousel on the public website.`}
+        confirmText="Yes, Remove Featured"
+        cancelText="Cancel"
+        type="warning"
+        loading={unfeatureConfirmState.loading}
+        onConfirm={handleConfirmRemoveFeatured}
+        onCancel={() => setUnfeatureConfirmState({ isOpen: false, campaign: null, loading: false })}
+      />
     </div>
   );
 }

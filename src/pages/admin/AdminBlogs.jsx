@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, BookOpen, AlertCircle, Check, RefreshCw, Image, Sparkles } from 'lucide-react';
 import { api } from '../../services/api';
+import ImageUploader from '../../components/ImageUploader';
 
 export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
@@ -422,25 +423,13 @@ export default function AdminBlogs() {
                 />
               </div>
 
-              {/* Image URL */}
+              {/* Image Uploader */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                  Image URL / Asset Path *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. /assets/impact3.png or https://images.unsplash.com/..."
+                <ImageUploader
+                  label="Blog Story Image"
                   value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.92rem',
-                    fontWeight: 600
-                  }}
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  placeholder="Choose an image file from device or paste a URL"
                 />
               </div>
 

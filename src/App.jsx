@@ -51,6 +51,7 @@ function PublicHomePage() {
   const [donateModalOpen, setDonateModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleOpenDonate = (campaign = null) => {
     setSelectedCampaign(campaign);
@@ -59,6 +60,12 @@ function PublicHomePage() {
 
   const handleCloseDonate = () => {
     setDonateModalOpen(false);
+  };
+
+  const handleDonationSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setToastMessage('Thank you for your generous donation! 💖');
+    setTimeout(() => setToastMessage(''), 4000);
   };
 
   const handleShare = (campaign) => {
@@ -74,12 +81,12 @@ function PublicHomePage() {
   return (
     <div className="app">
       <Navbar onOpenDonate={() => handleOpenDonate()} />
-      <HeroSection onOpenDonate={handleOpenDonate} />
-      <CausesSection onOpenDonate={handleOpenDonate} onShare={handleShare} />
+      <HeroSection key={`hero-${refreshKey}`} onOpenDonate={handleOpenDonate} />
+      <CausesSection key={`causes-${refreshKey}`} onOpenDonate={handleOpenDonate} onShare={handleShare} />
       <AboutSection />
       <YourImpactSection onOpenDonate={handleOpenDonate} />
       <RecognitionSection onOpenDonate={handleOpenDonate} />
-      <LiveFeedAndStoriesSection />
+      <LiveFeedAndStoriesSection key={`feed-${refreshKey}`} />
       <FaqSection />
       <Footer />
 
@@ -87,6 +94,7 @@ function PublicHomePage() {
         isOpen={donateModalOpen} 
         onClose={handleCloseDonate} 
         campaign={selectedCampaign} 
+        onSuccess={handleDonationSuccess}
       />
 
       {toastMessage && (

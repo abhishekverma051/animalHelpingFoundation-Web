@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../../services/api';
 import { X, Plus, Edit2, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Layers, Check, AlertCircle } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import ImageUploader from '../../components/ImageUploader';
 
 export default function AdminContentCardsModal({ campaign, isOpen, onClose, onRefresh }) {
   if (!isOpen || !campaign) return null;
@@ -301,23 +302,11 @@ export default function AdminContentCardsModal({ campaign, isOpen, onClose, onRe
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-                    Card Image URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/..."
+                  <ImageUploader
+                    label="Card Image"
                     value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.9rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
+                    onChange={setImage}
+                    placeholder="Choose an image file from device or paste a URL"
                   />
                 </div>
 

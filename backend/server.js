@@ -13,6 +13,8 @@ import mongoSanitize from 'express-mongo-sanitize';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { verifyAdminToken, JWT_SECRET } from './middleware/auth.js';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -23,6 +25,15 @@ const DB_PATH = path.join(__dirname, 'data', 'db.json');
 const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
+
+// Razorpay Payment Gateway Initialization
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_TbxI4yt7rPj7yi';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '7oPnqmi1BpoKjOIkWZ45g5J0';
+
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET
+});
 
 // -------------------------------------------------------------
 // PRODUCTION SECURITY MIDDLEWARES
@@ -39,9 +50,9 @@ app.use(mongoSanitize({
   replaceWith: '_'
 }));
 
-// 3. Payload size limit to prevent Heap Memory exhaustion & DoS buffer attacks
-app.use(express.json({ limit: '50kb' }));
-app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+// 3. Payload size limit (increased to 50mb to support image uploads & data URLs)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 4. CORS Whitelist: Strict allowed origins for public site & admin panel
 const allowedOrigins = [
@@ -166,6 +177,9 @@ const donationSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   isAnonymous: { type: Boolean, default: false },
   status: { type: String, enum: ['Completed', 'Pending', 'Failed'], default: 'Completed' },
+  razorpayOrderId: { type: String },
+  razorpayPaymentId: { type: String },
+  razorpaySignature: { type: String },
   createdAt: { type: String, default: () => new Date().toISOString() }
 });
 
@@ -240,37 +254,45 @@ if (MONGODB_URI) {
 }
 
 // -------------------------------------------------------------
-// CLOUDINARY IMAGE UPLOAD ROUTE
+// DEVICE & CLOUDINARY IMAGE UPLOAD ROUTE
 // -------------------------------------------------------------
 app.post('/api/upload', verifyAdminToken, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No image file provided for upload.' });
   }
 
-  if (!process.env.CLOUDINARY_CLOUD_NAME) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Cloudinary credentials are not configured on the backend environment.' 
+  if (process.env.CLOUDINARY_CLOUD_NAME) {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'animal_ngo_campaigns' },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error, using Data URL fallback:', error);
+          const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+          return res.json({
+            success: true,
+            message: 'Image processed successfully.',
+            url: base64Data
+          });
+        }
+        res.json({
+          success: true,
+          message: 'Image uploaded successfully to Cloudinary.',
+          url: result.secure_url
+        });
+      }
+    );
+    stream.end(req.file.buffer);
+  } else {
+    // Cloudinary not configured: Convert device upload to Data URL for instant local/standalone usage
+    const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    res.json({
+      success: true,
+      message: 'Image uploaded successfully from device.',
+      url: base64Data
     });
   }
-
-  const stream = cloudinary.uploader.upload_stream(
-    { folder: 'animal_ngo_campaigns' },
-    (error, result) => {
-      if (error) {
-        console.error('Cloudinary upload error:', error);
-        return res.status(500).json({ success: false, message: 'Failed to upload image to Cloudinary.' });
-      }
-      res.json({
-        success: true,
-        message: 'Image uploaded successfully to Cloudinary.',
-        url: result.secure_url
-      });
-    }
-  );
-
-  stream.end(req.file.buffer);
 });
+
 
 // -------------------------------------------------------------
 // AUTH ROUTES
@@ -798,6 +820,134 @@ app.delete('/api/campaigns/:id/cards/:cardId', verifyAdminToken, async (req, res
 });
 
 // -------------------------------------------------------------
+// RAZORPAY PAYMENT GATEWAY ROUTES
+// -------------------------------------------------------------
+
+// Get Razorpay Key ID for frontend SDK
+app.get('/api/razorpay/key', (req, res) => {
+  res.json({ success: true, key: RAZORPAY_KEY_ID });
+});
+
+// Create Razorpay Order
+app.post('/api/razorpay/create-order', async (req, res) => {
+  const { amount, currency = 'INR', campaignId } = req.body;
+
+  if (!amount || Number(amount) <= 0) {
+    return res.status(400).json({ success: false, message: 'Valid donation amount is required.' });
+  }
+
+  try {
+    const options = {
+      amount: Math.round(Number(amount) * 100), // Razorpay accepts amount in paise (1 INR = 100 paise)
+      currency,
+      receipt: `receipt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      notes: {
+        campaignId: campaignId || 'general_donation'
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({
+      success: true,
+      order,
+      key: RAZORPAY_KEY_ID
+    });
+  } catch (error) {
+    console.error('Razorpay Order Creation Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create Razorpay payment order.',
+      error: error.message
+    });
+  }
+});
+
+// Verify Payment Signature & Complete Donation
+app.post('/api/razorpay/verify-payment', async (req, res) => {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    campaignId,
+    donorName,
+    email,
+    phone,
+    amount,
+    isAnonymous
+  } = req.body;
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ success: false, message: 'Incomplete Razorpay payment verification payload.' });
+  }
+
+  // HMAC SHA-256 Signature Verification
+  const text = razorpay_order_id + '|' + razorpay_payment_id;
+  const expectedSignature = crypto
+    .createHmac('sha256', RAZORPAY_KEY_SECRET)
+    .update(text.toString())
+    .digest('hex');
+
+  if (expectedSignature !== razorpay_signature) {
+    return res.status(400).json({ success: false, message: 'Invalid payment signature. Verification failed.' });
+  }
+
+  // Verification passed - save recorded donation
+  const cleanName = donorName ? sanitizeText(donorName).trim() : 'Kind Heart';
+  const cleanEmail = email ? sanitizeText(email).trim() : '';
+  const cleanPhone = phone ? sanitizeText(phone).trim() : '';
+  const parsedAmount = Number(amount);
+  const anonymousFlag = Boolean(isAnonymous);
+
+  const newDonation = {
+    id: `don-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    campaignId: campaignId || 'general',
+    donorName: cleanName,
+    email: cleanEmail,
+    phone: cleanPhone,
+    amount: parsedAmount,
+    isAnonymous: anonymousFlag,
+    status: 'Completed',
+    razorpayOrderId: razorpay_order_id,
+    razorpayPaymentId: razorpay_payment_id,
+    razorpaySignature: razorpay_signature,
+    createdAt: new Date().toISOString()
+  };
+
+  if (isMongoConnected) {
+    await DonationModel.create(newDonation);
+    const campaign = await CampaignModel.findOne({ id: campaignId });
+    if (campaign) {
+      campaign.raisedAmount = Number(campaign.raisedAmount || 0) + parsedAmount;
+      await campaign.save();
+    }
+  } else {
+    const db = readFileDB();
+    if (!db.donations) db.donations = [];
+    db.donations.unshift(newDonation);
+
+    const campaign = (db.campaigns || []).find(c => c.id === campaignId);
+    if (campaign) {
+      campaign.raisedAmount = Number(campaign.raisedAmount || 0) + parsedAmount;
+    }
+    writeFileDB(db);
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Thank you for your generous donation! Payment verified successfully.',
+    donation: {
+      id: newDonation.id,
+      campaignId: newDonation.campaignId,
+      donorName: anonymousFlag ? 'Anonymous' : newDonation.donorName,
+      amount: newDonation.amount,
+      isAnonymous: anonymousFlag,
+      razorpayPaymentId: newDonation.razorpayPaymentId,
+      createdAt: newDonation.createdAt
+    }
+  });
+});
+
+// -------------------------------------------------------------
 // DONATION ROUTES
 // -------------------------------------------------------------
 app.post('/api/donations', async (req, res) => {
@@ -885,6 +1035,28 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   res.json({
     success: true,
     donations: publicDonations
+  });
+});
+
+// Admin All Donations & Razorpay Logs Endpoint
+app.get('/api/admin/donations', verifyAdminToken, async (req, res) => {
+  const { campaignId } = req.query;
+  let donations = [];
+
+  if (isMongoConnected) {
+    const query = campaignId ? { campaignId } : {};
+    donations = await DonationModel.find(query).sort({ createdAt: -1 });
+  } else {
+    const db = readFileDB();
+    donations = db.donations || [];
+    if (campaignId) {
+      donations = donations.filter(d => d.campaignId === campaignId);
+    }
+  }
+
+  res.json({
+    success: true,
+    donations
   });
 });
 

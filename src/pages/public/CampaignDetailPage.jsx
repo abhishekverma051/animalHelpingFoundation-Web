@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import LiveFeedAndStoriesSection from '../../components/LiveFeedAndStoriesSection';
 import FaqSection from '../../components/FaqSection';
 import DonateModal from '../../components/DonateModal';
+import AdminContentCardsModal from '../admin/AdminContentCardsModal';
 import { 
   ArrowLeft, 
   Heart, 
@@ -13,7 +15,12 @@ import {
   Layers, 
   CheckCircle, 
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck,
+  Edit3,
+  Users,
+  Eye,
+  X
 } from 'lucide-react';
 
 // Custom PhonePe Icon Component
@@ -85,20 +92,32 @@ const WhatsAppIcon = () => (
 
 export default function CampaignDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
   const [campaign, setCampaign] = useState(null);
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [donateModalOpen, setDonateModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Admin View State
+  const fromAdminParam = searchParams.get('fromAdmin') === 'true' || searchParams.get('admin') === 'true';
+  const hasAdminToken = Boolean(localStorage.getItem('admin_token'));
+  const isAdminUser = hasAdminToken || isAuthenticated;
+  const [isAdminMode, setIsAdminMode] = useState(fromAdminParam || isAdminUser);
+  const [contentCardsModalOpen, setContentCardsModalOpen] = useState(false);
+  const [showDonationsModal, setShowDonationsModal] = useState(false);
   
   // Floating Bar State
   const [selectedDonateAmount, setSelectedDonateAmount] = useState(3000);
   const [customDonateAmount, setCustomDonateAmount] = useState('3000');
 
-  const fetchCampaignAndDonations = async () => {
+  const fetchCampaignAndDonations = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       setError('');
       const [campRes, donRes] = await Promise.all([
         api.getCampaignById(id),
@@ -108,9 +127,9 @@ export default function CampaignDetailPage() {
       setDonations(donRes.donations || []);
     } catch (err) {
       console.error('Error fetching campaign detail:', err);
-      setError(err.message || 'Campaign not found.');
+      if (!isSilent) setError(err.message || 'Campaign not found.');
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -125,13 +144,13 @@ export default function CampaignDetailPage() {
       navigator.clipboard.writeText(window.location.href);
       setToastMessage('Campaign link copied to clipboard! 🐾');
     } else {
-      setToastMessage('Sharing campaign: ' + campaign.title);
+      setToastMessage('Sharing campaign: ' + campaign?.title);
     }
     setTimeout(() => setToastMessage(''), 3500);
   };
 
   const handleDonationSuccess = () => {
-    fetchCampaignAndDonations();
+    fetchCampaignAndDonations(true);
     setToastMessage('Thank you for your generous donation! 💖');
     setTimeout(() => setToastMessage(''), 4000);
   };
@@ -149,7 +168,7 @@ export default function CampaignDetailPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
-        <Navbar />
+        <Navbar isAdmin={isAdminUser} />
         <div style={{ padding: '80px 24px', textAlign: 'center', color: '#64748b' }}>
           <div style={{
             width: '44px',
@@ -170,7 +189,7 @@ export default function CampaignDetailPage() {
   if (error || !campaign) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
-        <Navbar />
+        <Navbar isAdmin={isAdminUser} />
         <div style={{ maxWidth: '600px', margin: '80px auto', padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
           <AlertCircle size={48} color="#dc2626" style={{ marginBottom: '16px' }} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
@@ -180,7 +199,7 @@ export default function CampaignDetailPage() {
             {error || 'The requested campaign might have been removed or does not exist.'}
           </p>
           <Link
-            to="/"
+            to={isAdminUser ? "/admin/campaigns" : "/"}
             style={{
               padding: '12px 24px',
               backgroundColor: '#d32020',
@@ -194,7 +213,7 @@ export default function CampaignDetailPage() {
             }}
           >
             <ArrowLeft size={18} />
-            <span>Back to All Campaigns</span>
+            <span>{isAdminUser ? "Back to Admin Campaigns" : "Back to All Campaigns"}</span>
           </Link>
         </div>
         <Footer />
@@ -212,14 +231,96 @@ export default function CampaignDetailPage() {
       }));
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", paddingBottom: '110px' }}>
-      <Navbar onOpenDonate={() => handleOpenDonateWithAmount(selectedDonateAmount)} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", paddingBottom: isAdminMode ? '40px' : '110px' }}>
+      
+      {/* Sticky Admin Control Bar (Visible when user is Admin) */}
+      {isAdminUser && (
+        <div style={{
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          padding: '12px 24px',
+          borderBottom: '3px solid #d32020',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10000
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{
+              backgroundColor: '#d32020',
+              color: '#ffffff',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <ShieldCheck size={14} />
+              <span>ADMIN CONTROL MODE</span>
+            </span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e2e8f0' }}>
+              Campaign: <strong>{campaign.title}</strong>
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={() => setIsAdminMode(!isAdminMode)}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: isAdminMode ? 'rgba(255,255,255,0.15)' : '#10b981',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Eye size={14} />
+              <span>{isAdminMode ? 'Switch to Donor View' : 'Switch to Admin Management View'}</span>
+            </button>
+
+            <Link
+              to="/admin/campaigns"
+              style={{
+                padding: '6px 14px',
+                backgroundColor: '#d32020',
+                color: '#ffffff',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Admin Campaigns</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <Navbar isAdmin={isAdminUser} onOpenDonate={() => handleOpenDonateWithAmount(selectedDonateAmount)} />
 
       {/* Back Navigation Bar */}
       <div style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 24px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link
-            to="/"
+            to={isAdminUser ? "/admin/campaigns" : "/"}
             style={{
               fontSize: '0.9rem',
               fontWeight: 700,
@@ -231,8 +332,14 @@ export default function CampaignDetailPage() {
             }}
           >
             <ArrowLeft size={18} />
-            <span>Back to Homepage & All Causes</span>
+            <span>{isAdminUser ? "← Back to Admin Campaigns" : "Back to Homepage & All Causes"}</span>
           </Link>
+
+          {isAdminUser && (
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: isAdminMode ? '#1e40af' : '#047857', backgroundColor: isAdminMode ? '#eff6ff' : '#ecfdf5', padding: '4px 12px', borderRadius: '9999px', border: `1px solid ${isAdminMode ? '#bfdbfe' : '#a7f3d0'}` }}>
+              {isAdminMode ? "⚡ Active Mode: Admin View" : "👁️ Active Mode: Donor Preview"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -272,7 +379,7 @@ export default function CampaignDetailPage() {
             </div>
           </div>
 
-          {/* Details & Donation Card */}
+          {/* Details & Action Card */}
           <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -289,85 +396,218 @@ export default function CampaignDetailPage() {
             </div>
 
             <div>
-              {/* Funding Progress Box */}
-              <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Raised so far</span>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#059669' }}>
-                      {formatCurrency(campaign.raisedAmount)}
+              {/* ADMIN MODE VIEW CARD (Replaces Donate Now for Admin) */}
+              {isAdminMode ? (
+                <div style={{
+                  backgroundColor: '#0f172a',
+                  borderRadius: '20px',
+                  padding: '24px',
+                  color: '#ffffff',
+                  border: '1px solid #334155',
+                  boxShadow: '0 10px 25px rgba(15,23,42,0.15)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ShieldCheck size={20} color="#38bdf8" />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Admin Campaign Management
+                      </span>
+                    </div>
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      backgroundColor: campaign.status === 'Active' ? '#166534' : (campaign.status === 'Paused' ? '#92400e' : '#374151'),
+                      color: '#ffffff'
+                    }}>
+                      {campaign.status}
+                    </span>
+                  </div>
+
+                  {/* Funding Progress Bar */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>
+                      <span>Progress ({percent}%)</span>
+                      <span style={{ color: '#4ade80', fontWeight: 800 }}>{formatCurrency(campaign.raisedAmount)} / {formatCurrency(campaign.goalAmount)}</span>
+                    </div>
+                    <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${percent}%`, backgroundColor: '#38bdf8', borderRadius: '9999px' }} />
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Target Goal</span>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                      {formatCurrency(campaign.goalAmount)}
+
+                  {/* Metric Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                    <div style={{ backgroundColor: '#1e293b', padding: '10px 12px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, display: 'block' }}>RAISED</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#4ade80' }}>{formatCurrency(campaign.raisedAmount)}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#1e293b', padding: '10px 12px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, display: 'block' }}>GOAL</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' }}>{formatCurrency(campaign.goalAmount)}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#1e293b', padding: '10px 12px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, display: 'block' }}>DONORS</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#38bdf8' }}>{donations.length}</span>
                     </div>
                   </div>
+
+                  {/* Admin Quick Action Buttons */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button
+                      onClick={() => navigate('/admin/campaigns')}
+                      style={{
+                        padding: '12px 14px',
+                        backgroundColor: '#d32020',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Edit3 size={15} />
+                      <span>Edit Campaign</span>
+                    </button>
+
+                    <button
+                      onClick={() => setContentCardsModalOpen(true)}
+                      style={{
+                        padding: '12px 14px',
+                        backgroundColor: '#334155',
+                        color: '#ffffff',
+                        border: '1px solid #475569',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Layers size={15} />
+                      <span>Content Cards</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setShowDonationsModal(true)}
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      padding: '10px 14px',
+                      backgroundColor: '#1e293b',
+                      color: '#94a3b8',
+                      border: '1px solid #334155',
+                      borderRadius: '10px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Users size={14} />
+                    <span>View {donations.length} Campaign Donations</span>
+                  </button>
+
+                  <div style={{ marginTop: '14px', fontSize: '0.75rem', color: '#64748b', textAlign: 'center' }}>
+                    ⚡ Online donation buttons & floating UPI bar are hidden in Admin View.
+                  </div>
                 </div>
+              ) : (
+                /* PUBLIC USER VIEW CARD (Donate Now buttons) */
+                <div>
+                  <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Raised so far</span>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#059669' }}>
+                          {formatCurrency(campaign.raisedAmount)}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Target Goal</span>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                          {formatCurrency(campaign.goalAmount)}
+                        </div>
+                      </div>
+                    </div>
 
-                <div style={{ height: '10px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden', marginBottom: '10px' }}>
-                  <div style={{ height: '100%', width: `${percent}%`, backgroundColor: '#d32020', borderRadius: '9999px' }} />
+                    <div style={{ height: '10px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden', marginBottom: '10px' }}>
+                      <div style={{ height: '100%', width: `${percent}%`, backgroundColor: '#d32020', borderRadius: '9999px' }} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 700, color: '#64748b' }}>
+                      <span>{percent}% Funded</span>
+                      <span>100% Direct Impact</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '14px' }}>
+                    <button
+                      onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
+                      disabled={campaign.status !== 'Active'}
+                      style={{
+                        flex: 1,
+                        padding: '16px 24px',
+                        backgroundColor: campaign.status === 'Active' ? '#d32020' : '#94a3b8',
+                        backgroundImage: campaign.status === 'Active' ? 'linear-gradient(90deg, #e83030 0%, #b81414 100%)' : 'none',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '14px',
+                        fontWeight: 800,
+                        fontSize: '1.05rem',
+                        cursor: campaign.status === 'Active' ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        boxShadow: campaign.status === 'Active' ? '0 10px 25px -5px rgba(211,32,32,0.5)' : 'none'
+                      }}
+                    >
+                      <Heart size={20} fill="#ffffff" />
+                      <span>{campaign.status === 'Active' ? 'Donate Now' : `Campaign ${campaign.status}`}</span>
+                    </button>
+
+                    <button
+                      onClick={handleShare}
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#ffffff',
+                        color: '#334155',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '14px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Share Campaign"
+                    >
+                      <Share2 size={20} />
+                    </button>
+                  </div>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 700, color: '#64748b' }}>
-                  <span>{percent}% Funded</span>
-                  <span>100% Direct Impact</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '14px' }}>
-                <button
-                  onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-                  disabled={campaign.status !== 'Active'}
-                  style={{
-                    flex: 1,
-                    padding: '16px 24px',
-                    backgroundColor: campaign.status === 'Active' ? '#d32020' : '#94a3b8',
-                    backgroundImage: campaign.status === 'Active' ? 'linear-gradient(90deg, #e83030 0%, #b81414 100%)' : 'none',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '14px',
-                    fontWeight: 800,
-                    fontSize: '1.05rem',
-                    cursor: campaign.status === 'Active' ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    boxShadow: campaign.status === 'Active' ? '0 10px 25px -5px rgba(211,32,32,0.5)' : 'none'
-                  }}
-                >
-                  <Heart size={20} fill="#ffffff" />
-                  <span>{campaign.status === 'Active' ? 'Donate Now' : `Campaign ${campaign.status}`}</span>
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#ffffff',
-                    color: '#334155',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '14px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  title="Share Campaign"
-                >
-                  <Share2 size={20} />
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* CAMPAIGN HIGHLIGHTS & IMPACT STORIES SECTION (PROJECT CARDS DESIGN) */}
+      {/* CAMPAIGN HIGHLIGHTS & IMPACT STORIES SECTION */}
       <div style={{ maxWidth: '1280px', margin: '48px auto 48px', padding: '0 24px' }}>
         <div style={{
           backgroundColor: '#ffffff',
@@ -376,11 +616,34 @@ export default function CampaignDetailPage() {
           padding: '36px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-            <Sparkles size={22} color="#15803d" />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1c1917', margin: 0 }}>
-              Project Highlights
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={22} color="#15803d" />
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1c1917', margin: 0 }}>
+                Project Highlights & Story
+              </h2>
+            </div>
+            {isAdminMode && (
+              <button
+                onClick={() => setContentCardsModalOpen(true)}
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Layers size={14} />
+                <span>Manage Story Cards</span>
+              </button>
+            )}
           </div>
 
           {campaignDetailsEntries.length === 0 ? (
@@ -443,190 +706,262 @@ export default function CampaignDetailPage() {
       <FaqSection />
       <Footer />
 
-      {/* FLOATING WHATSAPP BUTTON */}
-      <a
-        href="https://wa.me/919999999999?text=Hello%2C%20I%20want%20to%20know%20more%20about%20the%20NGO%20campaigns"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          position: 'fixed',
-          bottom: '100px',
-          right: '24px',
-          zIndex: 9999,
-          backgroundColor: '#25D366',
-          color: '#ffffff',
-          padding: '10px 18px',
-          borderRadius: '9999px',
-          boxShadow: '0 8px 24px rgba(37, 211, 102, 0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          textDecoration: 'none',
-          cursor: 'pointer'
-        }}
-      >
-        <WhatsAppIcon />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-          <span style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: 600 }}>Chat with us on</span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>WhatsApp</span>
-        </div>
-      </a>
-
-      {/* FLOATING PAYMENT BAR */}
-      <div style={{
-        position: 'fixed',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9999,
-        width: 'calc(100% - 32px)',
-        maxWidth: '1080px',
-        backgroundColor: '#18181b',
-        borderRadius: '20px',
-        padding: '12px 20px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '14px',
-        boxSizing: 'border-box',
-        overflowX: 'auto'
-      }}>
-        {/* Left: Donate Via UPI & App Icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-          <div style={{ color: '#ffffff', lineHeight: 1.2 }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Donate Via</div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>UPI</div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div 
-              onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-              title="Donate via PhonePe"
-            >
-              <PhonePeIcon />
-              <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>PhonePe</span>
-            </div>
-
-            <div 
-              onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-              title="Donate via GPay"
-            >
-              <GPayIcon />
-              <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Gpay</span>
-            </div>
-
-            <div 
-              onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-              title="Donate via BHIM UPI"
-            >
-              <BhimUpiIcon />
-              <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Bhim UPI</span>
-            </div>
-
-            <div 
-              onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-              title="More Payment Options"
-            >
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                backgroundColor: '#27272a',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 0 }}>...</span>
-              </div>
-              <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>More</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Vertical Divider Line */}
-        <div style={{ width: '1px', height: '36px', backgroundColor: '#3f3f46', flexShrink: 0, margin: '0 4px' }} />
-
-        {/* Center & Right: Presets & Amount Input & Donate Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[500, 1000, 2500, 5000, 10000].map((amt) => (
-              <button
-                key={amt}
-                onClick={() => {
-                  setSelectedDonateAmount(amt);
-                  setCustomDonateAmount(String(amt));
-                }}
-                style={{
-                  backgroundColor: selectedDonateAmount === amt ? '#ef4444' : '#27272a',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '10px 16px',
-                  fontSize: '0.88rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s ease'
-                }}
-              >
-                ₹{amt.toLocaleString()}
-              </button>
-            ))}
-          </div>
-
-          <div style={{
+      {/* FLOATING WHATSAPP BUTTON (Only in Donor View) */}
+      {!isAdminMode && (
+        <a
+          href="https://wa.me/919999999999?text=Hello%2C%20I%20want%20to%20know%20more%20about%20the%20NGO%20campaigns"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: 'fixed',
+            bottom: '100px',
+            right: '24px',
+            zIndex: 9999,
+            backgroundColor: '#25D366',
+            color: '#ffffff',
+            padding: '10px 18px',
+            borderRadius: '9999px',
+            boxShadow: '0 8px 24px rgba(37, 211, 102, 0.4)',
             display: 'flex',
             alignItems: 'center',
-            backgroundColor: '#18181b',
-            border: '1px solid #3f3f46',
-            borderRadius: '10px',
-            padding: '6px 12px',
-            color: '#ffffff'
-          }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#e2e8f0' }}>₹ INR ▾</span>
-            <span style={{ margin: '0 8px', color: '#52525b' }}>|</span>
-            <input
-              type="number"
-              value={customDonateAmount}
-              onChange={(e) => {
-                setCustomDonateAmount(e.target.value);
-                setSelectedDonateAmount(Number(e.target.value) || null);
-              }}
-              style={{
-                width: '70px',
-                background: 'transparent',
-                border: 'none',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '0.95rem',
-                outline: 'none'
-              }}
-            />
+            gap: '10px',
+            textDecoration: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          <WhatsAppIcon />
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: 600 }}>Chat with us on</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>WhatsApp</span>
+          </div>
+        </a>
+      )}
+
+      {/* FLOATING PAYMENT BAR (Only rendered in Public/Donor View) */}
+      {!isAdminMode && (
+        <div style={{
+          position: 'fixed',
+          bottom: '16px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          width: 'calc(100% - 32px)',
+          maxWidth: '1080px',
+          backgroundColor: '#18181b',
+          borderRadius: '20px',
+          padding: '12px 20px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+          boxSizing: 'border-box',
+          overflowX: 'auto'
+        }}>
+          {/* Left: Donate Via UPI & App Icons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+            <div style={{ color: '#ffffff', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Donate Via</div>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>UPI</div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div 
+                onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
+                style={{ textAlign: 'center', cursor: 'pointer' }}
+                title="Donate via PhonePe"
+              >
+                <PhonePeIcon />
+                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>PhonePe</span>
+              </div>
+
+              <div 
+                onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
+                style={{ textAlign: 'center', cursor: 'pointer' }}
+                title="Donate via GPay"
+              >
+                <GPayIcon />
+                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Gpay</span>
+              </div>
+
+              <div 
+                onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
+                style={{ textAlign: 'center', cursor: 'pointer' }}
+                title="Donate via BHIM UPI"
+              >
+                <BhimUpiIcon />
+                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Bhim UPI</span>
+              </div>
+
+              <div 
+                onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
+                style={{ textAlign: 'center', cursor: 'pointer' }}
+                title="More Payment Options"
+              >
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  backgroundColor: '#27272a',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 0 }}>...</span>
+                </div>
+                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>More</span>
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={() => handleOpenDonateWithAmount(selectedDonateAmount || customDonateAmount || 3000)}
-            style={{
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px 28px',
-              fontWeight: 800,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
-            }}
-          >
-            Donate
-          </button>
+          {/* Vertical Divider Line */}
+          <div style={{ width: '1px', height: '36px', backgroundColor: '#3f3f46', flexShrink: 0, margin: '0 4px' }} />
+
+          {/* Center & Right: Presets & Amount Input & Donate Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[500, 1000, 2500, 5000, 10000].map((amt) => (
+                <button
+                  key={amt}
+                  onClick={() => {
+                    setSelectedDonateAmount(amt);
+                    setCustomDonateAmount(String(amt));
+                  }}
+                  style={{
+                    backgroundColor: selectedDonateAmount === amt ? '#ef4444' : '#27272a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px 16px',
+                    fontSize: '0.88rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                >
+                  ₹{amt.toLocaleString()}
+                </button>
+              ))}
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#18181b',
+              border: '1px solid #3f3f46',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              color: '#ffffff'
+            }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#e2e8f0' }}>₹ INR ▾</span>
+              <span style={{ margin: '0 8px', color: '#52525b' }}>|</span>
+              <input
+                type="number"
+                value={customDonateAmount}
+                onChange={(e) => {
+                  setCustomDonateAmount(e.target.value);
+                  setSelectedDonateAmount(Number(e.target.value) || null);
+                }}
+                style={{
+                  width: '70px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => handleOpenDonateWithAmount(selectedDonateAmount || customDonateAmount || 3000)}
+              style={{
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 28px',
+                fontWeight: 800,
+                fontSize: '1rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              Donate
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ADMIN DONATIONS MODAL */}
+      {showDonationsModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 10000, padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff', borderRadius: '24px', maxWidth: '680px', width: '100%',
+            maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ padding: '20px 24px', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Campaign Donations History</h3>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '2px 0 0' }}>{campaign.title}</p>
+              </div>
+              <button onClick={() => setShowDonationsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={22} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              {donations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                  <Users size={36} style={{ marginBottom: '10px', opacity: 0.5 }} />
+                  <p style={{ fontWeight: 600 }}>No online donations recorded for this campaign yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {donations.map((don, idx) => (
+                    <div key={don.id || idx} style={{ padding: '14px 18px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{don.donorName || 'Anonymous Hero'}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{don.donorEmail || 'No email provided'} • {don.createdAt ? new Date(don.createdAt).toLocaleString('en-IN') : 'Recent'}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 800, color: '#059669', fontSize: '1.05rem' }}>₹{(don.amount || 0).toLocaleString('en-IN')}</div>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#166534', backgroundColor: '#dcfce7', padding: '2px 8px', borderRadius: '9999px' }}>{don.paymentStatus || 'Completed'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', textAlign: 'right', backgroundColor: '#f8fafc' }}>
+              <button onClick={() => setShowDonationsModal(false)} style={{ padding: '10px 20px', backgroundColor: '#0f172a', color: '#ffffff', borderRadius: '10px', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN CONTENT CARDS MANAGING MODAL */}
+      {contentCardsModalOpen && (
+        <AdminContentCardsModal
+          campaign={campaign}
+          isOpen={contentCardsModalOpen}
+          onClose={() => setContentCardsModalOpen(false)}
+          onRefresh={() => fetchCampaignAndDonations(true)}
+        />
+      )}
 
       {/* Interactive Donation Modal */}
       <DonateModal

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Flag, IndianRupee, Send, Users, ArrowUpRight, ExternalLink } from 'lucide-react';
 
 export default function CausesSection({ onOpenDonate, onShare }) {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchActiveCampaigns = async () => {
@@ -47,7 +48,12 @@ export default function CausesSection({ onOpenDonate, onShare }) {
             const percent = Math.min(100, Math.round(((campaign.raisedAmount || 0) / (campaign.goalAmount || 1)) * 100));
 
             return (
-              <div className="cause-card" key={campaign.id}>
+              <div 
+                className="cause-card" 
+                key={campaign.id}
+                onClick={() => navigate(`/campaign/${campaign.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
                 {/* Card Image Wrapper */}
                 <div className="card-img-container">
                   <img 
@@ -70,7 +76,7 @@ export default function CausesSection({ onOpenDonate, onShare }) {
                     ></div>
                   </div>
 
-                  <Link to={`/campaign/${campaign.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link to={`/campaign/${campaign.id}`} onClick={(e) => e.stopPropagation()} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span>{campaign.title}</span>
                       <ExternalLink size={16} color="#d32020" style={{ flexShrink: 0, marginLeft: '8px' }} />
@@ -100,13 +106,19 @@ export default function CausesSection({ onOpenDonate, onShare }) {
                   <div className="card-actions">
                     <button 
                       className="btn-card-share" 
-                      onClick={() => onShare(campaign)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShare(campaign);
+                      }}
                     >
                       <Send size={14} /> Share
                     </button>
                     <button 
                       className="btn-card-donate" 
-                      onClick={() => onOpenDonate(campaign)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenDonate(campaign);
+                      }}
                     >
                       Donate Now
                     </button>
