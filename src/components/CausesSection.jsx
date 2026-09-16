@@ -57,9 +57,13 @@ export default function CausesSection({ onOpenDonate, onShare }) {
                 {/* Card Image Wrapper */}
                 <div className="card-img-container">
                   <img 
-                    src={campaign.image} 
+                    src={campaign.image || 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80'} 
                     alt={campaign.title} 
                     className="card-img" 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80';
+                    }}
                   />
                   <div className="card-donor-badge">
                     <Users size={14} color="#d92626" />

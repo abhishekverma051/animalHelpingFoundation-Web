@@ -15,6 +15,7 @@ import multer from 'multer';
 import { verifyAdminToken, JWT_SECRET } from './middleware/auth.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { sendPurchaseEvent } from './services/metaConversionsApi.js';
 
 dotenv.config();
 
@@ -932,6 +933,19 @@ app.post('/api/razorpay/verify-payment', async (req, res) => {
     writeFileDB(db);
   }
 
+  // Send Meta Conversions API (CAPI) server-side event for Purchase deduplication
+  sendPurchaseEvent({
+    id: razorpay_payment_id,
+    totalAmount: parsedAmount,
+    currency: 'INR',
+    campaignId: campaignId || 'general',
+    email: cleanEmail,
+    phone: cleanPhone,
+    pageUrl: req.headers.referer || req.headers.origin
+  }, req).catch(err => {
+    console.error('[Meta CAPI] Async event error in verify-payment:', err);
+  });
+
   res.status(201).json({
     success: true,
     message: 'Thank you for your generous donation! Payment verified successfully.',
@@ -993,6 +1007,19 @@ app.post('/api/donations', async (req, res) => {
     }
     writeFileDB(db);
   }
+
+  // Send Meta Conversions API (CAPI) server-side event
+  sendPurchaseEvent({
+    id: newDonation.id,
+    totalAmount: parsedAmount,
+    currency: 'INR',
+    campaignId: campaignId || 'general',
+    email: cleanEmail,
+    phone: cleanPhone,
+    pageUrl: req.headers.referer || req.headers.origin
+  }, req).catch(err => {
+    console.error('[Meta CAPI] Async event error in donations:', err);
+  });
 
   res.status(201).json({
     success: true,

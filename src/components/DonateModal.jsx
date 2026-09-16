@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Heart, Shield, User, Mail, Phone, Lock } from 'lucide-react';
 import { api } from '../services/api';
+import pixel from '../services/pixel';
 
 export default function DonateModal({ isOpen, onClose, campaign, onSuccess, initialAmount }) {
   const [selectedAmount, setSelectedAmount] = useState(initialAmount || 1000);
@@ -17,7 +18,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
   });
   const [razorpayPaymentId, setRazorpayPaymentId] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && initialAmount) {
       const num = Number(initialAmount);
       if ([500, 1000, 2500, 5000, 10000].includes(num)) {
@@ -27,6 +28,15 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
         setSelectedAmount(null);
         setCustomAmount(String(num));
       }
+    }
+    
+    if (isOpen) {
+      pixel.trackInitiateCheckout({
+        amount: Number(customAmount || selectedAmount || initialAmount || 1000),
+        currency: 'INR',
+        campaignId: campaign?.id,
+        campaignTitle: campaign?.title
+      });
     }
   }, [initialAmount, isOpen]);
 
@@ -134,6 +144,16 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
 
             setRazorpayPaymentId(response.razorpay_payment_id);
             setSubmitted(true);
+
+            // Step 4: Fire Meta Pixel Purchase Event (with eventID matching backend CAPI)
+            pixel.trackPurchase({
+              orderId: response.razorpay_payment_id,
+              amount: numericAmt,
+              currency: 'INR',
+              campaignId: campaign ? campaign.id : 'camp-1',
+              campaignTitle: campaign ? campaign.title : 'Animal Welfare Donation'
+            });
+
             if (onSuccess) onSuccess();
           } catch (verifyErr) {
             console.error('Payment Verification Failed:', verifyErr);

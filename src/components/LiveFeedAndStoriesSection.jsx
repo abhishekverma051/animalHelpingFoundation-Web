@@ -72,9 +72,9 @@ export default function LiveFeedAndStoriesSection({ campaign, donations }) {
 
   return (
     <section className="donors-dark-bg-section">
-      <div className="container" style={{ paddingLeft: '80px', paddingRight: '80px' }}>
+      <div className="container feed-container">
         {/* Live Donors Card Grid matching Screenshot 4 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '32px', marginBottom: '24px' }}>
+        <div className="donors-feed-grid">
           {/* Left Box: Photo with Raised Till Now Overlay */}
           <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '320px', background: '#111' }}>
             <img src={displayImg} alt={campaign?.title || "Dogs under Umbrella"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

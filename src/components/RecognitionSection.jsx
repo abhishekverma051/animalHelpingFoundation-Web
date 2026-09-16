@@ -74,26 +74,26 @@ export default function RecognitionSection({ onOpenDonate }) {
 
           {/* Featured & Recognized Banner */}
           <div className="featured-banner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <img src="/assets/medal.png" alt="Medal Icon" style={{ width: '32px' }} />
+            <div className="featured-banner-left">
+              <img src="/assets/medal.png" alt="Medal Icon" className="featured-medal-icon" />
               <div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
+                <div className="featured-subheading">
                   Our Work Has Been
                 </div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, fontStyle: 'italic', color: '#f87171' }}>
+                <div className="featured-heading">
                   Featured & Recognized
                 </div>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '16px', opacity: 0.85 }}>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>ANI NEWS</span>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>DNA</span>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>oneindia</span>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>BusinessWorld</span>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>ABP</span>
+                <div className="featured-media-logos">
+                  <span>ANI NEWS</span>
+                  <span>DNA</span>
+                  <span>oneindia</span>
+                  <span>BusinessWorld</span>
+                  <span>ABP</span>
                 </div>
               </div>
             </div>
 
-            <div style={{ width: '220px', height: '120px', borderRadius: '16px', overflow: 'hidden' }}>
+            <div className="featured-banner-img-box">
               <img src="/assets/vet_treating.png" alt="Vet Treating Puppy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           </div>
@@ -108,15 +108,14 @@ export default function RecognitionSection({ onOpenDonate }) {
         <div className="nepal-floods-fullwidth-overlay"></div>
 
         <div className="nepal-floods-content">
-          <h2 style={{ fontSize: '3rem', fontWeight: 800, color: '#ffffff', marginBottom: '16px', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+          <h2 className="nepal-floods-title">
             Help Save Animals Affected by the <span style={{ color: '#f87171' }}>Nepal Floods</span>
           </h2>
-          <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, marginBottom: '32px', maxWidth: '840px', margin: '0 auto 32px' }}>
+          <p className="nepal-floods-desc">
             Floodwaters have left countless animals vulnerable, stranded, and without access to food or safe shelter. Your support can help us provide food, clean water, emergency rescue, medical care, and temporary shelter to animals affected by the crisis.
           </p>
           <button 
-            className="btn-hero-primary"
-            style={{ margin: '0 auto', padding: '16px 48px', fontSize: '1rem', fontWeight: 800 }}
+            className="btn-hero-primary nepal-floods-btn"
             onClick={() => onOpenDonate({ title: 'Nepal Floods Animal Relief' })}
           >
             DONATE NOW

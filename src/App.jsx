@@ -15,6 +15,18 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import CampaignDetailPage from './pages/public/CampaignDetailPage';
 import { CheckCircle } from 'lucide-react';
+import pixel from './services/pixel';
+
+// Route change tracker component for Meta Pixel PageViews
+function PixelPageViewTracker() {
+  const location = useLocation();
+
+  React.useEffect(() => {
+    pixel.pageView();
+  }, [location.pathname, location.search]);
+
+  return null;
+}
 
 // Protected Route Component for Admin Panel
 function ProtectedAdminRoute({ children }) {
@@ -108,8 +120,14 @@ function PublicHomePage() {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    pixel.init();
+    pixel.pageView();
+  }, []);
+
   return (
     <AuthProvider>
+      <PixelPageViewTracker />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<PublicHomePage />} />

@@ -20,14 +20,14 @@ export default function AboutSection() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px', marginBottom: '40px' }}>
           <div>
             <span className="pill-tag">ABOUT THE NGO / OUR IMPACT</span>
-            <h2 className="section-title" style={{ fontSize: '2.5rem', maxWidth: '640px', marginTop: '8px' }}>
+            <h2 className="section-title about-main-title">
               Turning Compassion Into Meaningful Action
             </h2>
           </div>
 
           <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '3rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>
+              <div className="about-stat-number">
                 15<span style={{ color: '#d92626' }}>+</span>
               </div>
               <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, marginTop: '4px' }}>
@@ -38,7 +38,7 @@ export default function AboutSection() {
             <div style={{ width: '1px', height: '50px', background: '#e5e7eb' }}></div>
 
             <div>
-              <div style={{ fontSize: '3rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>
+              <div className="about-stat-number">
                 100<span style={{ color: '#d92626' }}>+</span>
               </div>
               <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, marginTop: '4px' }}>

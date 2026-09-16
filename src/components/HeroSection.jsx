@@ -132,26 +132,7 @@ export default function HeroSection({ onOpenDonate }) {
         {slides.length > 1 && (
           <button
             onClick={handlePrev}
-            style={{
-              position: 'absolute',
-              left: '16px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 10,
-              backgroundColor: 'rgba(15, 23, 42, 0.65)',
-              backdropFilter: 'blur(4px)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-              transition: 'transform 0.2s ease, background-color 0.2s ease'
-            }}
+            className="hero-carousel-nav-btn hero-carousel-prev"
             title="Previous Campaign"
           >
             <ChevronLeft size={24} />
@@ -162,26 +143,7 @@ export default function HeroSection({ onOpenDonate }) {
         {slides.length > 1 && (
           <button
             onClick={handleNext}
-            style={{
-              position: 'absolute',
-              right: '16px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 10,
-              backgroundColor: 'rgba(15, 23, 42, 0.65)',
-              backdropFilter: 'blur(4px)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-              transition: 'transform 0.2s ease, background-color 0.2s ease'
-            }}
+            className="hero-carousel-nav-btn hero-carousel-next"
             title="Next Campaign"
           >
             <ChevronRight size={24} />
@@ -241,20 +203,7 @@ export default function HeroSection({ onOpenDonate }) {
         {/* Carousel Slide Indicators & Auto-Scroll Status */}
         {slides.length > 1 && (
           <div 
-            style={{
-              position: 'absolute',
-              bottom: '20px',
-              right: '24px',
-              zIndex: 10,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(6px)',
-              padding: '8px 16px',
-              borderRadius: '9999px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}
+            className="hero-carousel-indicator"
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>

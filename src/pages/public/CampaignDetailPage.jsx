@@ -344,19 +344,19 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Campaign Header & Hero Banner */}
-      <div style={{ maxWidth: '1280px', margin: '32px auto', padding: '0 24px' }}>
-        <div style={{
+      <div className="causes-container-60" style={{ margin: '24px auto' }}>
+        <div className="campaign-hero-card" style={{
           backgroundColor: '#ffffff',
-          borderRadius: '28px',
+          borderRadius: '24px',
           overflow: 'hidden',
           boxShadow: '0 15px 35px rgba(0,0,0,0.04)',
           border: '1px solid #e2e8f0',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '0'
         }}>
           {/* Cover Image */}
-          <div style={{ height: '100%', minHeight: '380px', position: 'relative' }}>
+          <div className="campaign-cover-box" style={{ height: '100%', minHeight: '280px', position: 'relative' }}>
             <img 
               src={campaign.image} 
               alt={campaign.title} 
@@ -364,13 +364,13 @@ export default function CampaignDetailPage() {
             />
             <div style={{
               position: 'absolute',
-              top: '20px',
-              left: '20px',
+              top: '16px',
+              left: '16px',
               backgroundColor: campaign.status === 'Active' ? '#15803d' : (campaign.status === 'Paused' ? '#b45309' : '#4b5563'),
               color: '#ffffff',
-              padding: '6px 16px',
+              padding: '6px 14px',
               borderRadius: '9999px',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
@@ -380,17 +380,17 @@ export default function CampaignDetailPage() {
           </div>
 
           {/* Details & Action Card */}
-          <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="campaign-details-box" style={{ padding: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#d32020', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d32020', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Verified NGO Rescue Cause
                 </span>
               </div>
-              <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.3, marginBottom: '16px' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.3, marginBottom: '12px' }}>
                 {campaign.title}
               </h1>
-              <p style={{ fontSize: '1rem', color: '#475569', lineHeight: 1.6, marginBottom: '28px' }}>
+              <p style={{ fontSize: '0.92rem', color: '#475569', lineHeight: 1.6, marginBottom: '24px' }}>
                 {campaign.description}
               </p>
             </div>
@@ -438,7 +438,7 @@ export default function CampaignDetailPage() {
                   </div>
 
                   {/* Metric Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px', marginBottom: '20px' }}>
                     <div style={{ backgroundColor: '#1e293b', padding: '10px 12px', borderRadius: '12px', border: '1px solid #334155', textAlign: 'center' }}>
                       <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, display: 'block' }}>RAISED</span>
                       <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#4ade80' }}>{formatCurrency(campaign.raisedAmount)}</span>
@@ -454,7 +454,7 @@ export default function CampaignDetailPage() {
                   </div>
 
                   {/* Admin Quick Action Buttons */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                     <button
                       onClick={() => navigate('/admin/campaigns')}
                       style={{
@@ -528,67 +528,67 @@ export default function CampaignDetailPage() {
               ) : (
                 /* PUBLIC USER VIEW CARD (Donate Now buttons) */
                 <div>
-                  <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                  <div style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '18px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
                       <div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Raised so far</span>
-                        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#059669' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Raised so far</span>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>
                           {formatCurrency(campaign.raisedAmount)}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Target Goal</span>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Target Goal</span>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
                           {formatCurrency(campaign.goalAmount)}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ height: '10px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden', marginBottom: '10px' }}>
+                    <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden', marginBottom: '8px' }}>
                       <div style={{ height: '100%', width: `${percent}%`, backgroundColor: '#d32020', borderRadius: '9999px' }} />
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 700, color: '#64748b' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, color: '#64748b' }}>
                       <span>{percent}% Funded</span>
                       <span>100% Direct Impact</span>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '14px' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
                     <button
                       onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
                       disabled={campaign.status !== 'Active'}
                       style={{
                         flex: 1,
-                        padding: '16px 24px',
+                        padding: '14px 20px',
                         backgroundColor: campaign.status === 'Active' ? '#d32020' : '#94a3b8',
                         backgroundImage: campaign.status === 'Active' ? 'linear-gradient(90deg, #e83030 0%, #b81414 100%)' : 'none',
                         color: '#ffffff',
                         border: 'none',
-                        borderRadius: '14px',
+                        borderRadius: '12px',
                         fontWeight: 800,
-                        fontSize: '1.05rem',
+                        fontSize: '0.95rem',
                         cursor: campaign.status === 'Active' ? 'pointer' : 'not-allowed',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '10px',
-                        boxShadow: campaign.status === 'Active' ? '0 10px 25px -5px rgba(211,32,32,0.5)' : 'none'
+                        gap: '8px',
+                        boxShadow: campaign.status === 'Active' ? '0 8px 20px -4px rgba(211,32,32,0.4)' : 'none'
                       }}
                     >
-                      <Heart size={20} fill="#ffffff" />
+                      <Heart size={18} fill="#ffffff" />
                       <span>{campaign.status === 'Active' ? 'Donate Now' : `Campaign ${campaign.status}`}</span>
                     </button>
 
                     <button
                       onClick={handleShare}
                       style={{
-                        padding: '16px',
+                        padding: '14px',
                         backgroundColor: '#ffffff',
                         color: '#334155',
                         border: '1px solid #cbd5e1',
-                        borderRadius: '14px',
+                        borderRadius: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
@@ -597,7 +597,7 @@ export default function CampaignDetailPage() {
                       }}
                       title="Share Campaign"
                     >
-                      <Share2 size={20} />
+                      <Share2 size={18} />
                     </button>
                   </div>
                 </div>
@@ -608,18 +608,18 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* CAMPAIGN HIGHLIGHTS & IMPACT STORIES SECTION */}
-      <div style={{ maxWidth: '1280px', margin: '48px auto 48px', padding: '0 24px' }}>
+      <div className="causes-container-60" style={{ margin: '36px auto' }}>
         <div style={{
           backgroundColor: '#ffffff',
           borderRadius: '24px',
           border: '1px solid #e2e8f0',
-          padding: '36px',
+          padding: '24px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={22} color="#15803d" />
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1c1917', margin: 0 }}>
+              <Sparkles size={20} color="#15803d" />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1c1917', margin: 0 }}>
                 Project Highlights & Story
               </h2>
             </div>
@@ -648,36 +648,36 @@ export default function CampaignDetailPage() {
 
           {campaignDetailsEntries.length === 0 ? (
             <div style={{
-              padding: '48px 24px',
+              padding: '36px 16px',
               backgroundColor: '#f8fafc',
-              borderRadius: '20px',
+              borderRadius: '16px',
               border: '2px dashed #cbd5e1',
               textAlign: 'center'
             }}>
-              <Sparkles size={36} color="#94a3b8" style={{ marginBottom: '12px' }} />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+              <Sparkles size={32} color="#94a3b8" style={{ marginBottom: '10px' }} />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                 Standard Rescue Support Program
               </h3>
-              <p style={{ fontSize: '0.9rem', color: '#64748b' }}>
+              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
                 Every contribution directly fuels our on-the-ground rescue vehicles and emergency veterinary care teams.
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {campaignDetailsEntries.map((detail, idx) => (
                 <div key={detail.id || idx} style={{
                   backgroundColor: '#ffffff',
-                  borderRadius: '20px',
+                  borderRadius: '18px',
                   border: '1px solid #e2e8f0',
                   overflow: 'hidden',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.04)'
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.03)'
                 }}>
                   {detail.image && (
                     <div style={{ width: '100%', overflow: 'hidden' }}>
                       <img 
                         src={detail.image} 
                         alt={`Campaign detail ${idx + 1}`} 
-                        style={{ width: '100%', maxHeight: '520px', objectFit: 'cover', display: 'block' }} 
+                        style={{ width: '100%', maxHeight: '480px', objectFit: 'cover', display: 'block' }} 
                       />
                     </div>
                   )}
@@ -686,9 +686,9 @@ export default function CampaignDetailPage() {
                     <div style={{
                       backgroundColor: '#4a301e',
                       color: '#fbf7f4',
-                      padding: '28px 32px',
-                      fontSize: '0.96rem',
-                      lineHeight: 1.7,
+                      padding: '20px 24px',
+                      fontSize: '0.92rem',
+                      lineHeight: 1.65,
                       whiteSpace: 'pre-line',
                       fontFamily: "'Plus Jakarta Sans', sans-serif"
                     }}>
@@ -714,65 +714,68 @@ export default function CampaignDetailPage() {
           rel="noopener noreferrer"
           style={{
             position: 'fixed',
-            bottom: '100px',
-            right: '24px',
+            bottom: '90px',
+            right: '16px',
             zIndex: 9999,
             backgroundColor: '#25D366',
             color: '#ffffff',
-            padding: '10px 18px',
+            padding: '8px 14px',
             borderRadius: '9999px',
             boxShadow: '0 8px 24px rgba(37, 211, 102, 0.4)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             textDecoration: 'none',
             cursor: 'pointer'
           }}
         >
           <WhatsAppIcon />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: 600 }}>Chat with us on</span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>WhatsApp</span>
+            <span style={{ fontSize: '0.65rem', opacity: 0.9, fontWeight: 600 }}>Chat with us on</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>WhatsApp</span>
           </div>
         </a>
       )}
 
       {/* FLOATING PAYMENT BAR (Only rendered in Public/Donor View) */}
       {!isAdminMode && (
-        <div style={{
-          position: 'fixed',
-          bottom: '16px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 9999,
-          width: 'calc(100% - 32px)',
-          maxWidth: '1080px',
-          backgroundColor: '#18181b',
-          borderRadius: '20px',
-          padding: '12px 20px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '14px',
-          boxSizing: 'border-box',
-          overflowX: 'auto'
-        }}>
+        <div 
+          className="no-scrollbar"
+          style={{
+            position: 'fixed',
+            bottom: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            width: 'calc(100% - 24px)',
+            maxWidth: '1080px',
+            backgroundColor: '#18181b',
+            borderRadius: '20px',
+            padding: '10px 14px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            boxSizing: 'border-box',
+            overflowX: 'auto'
+          }}
+        >
           {/* Left: Donate Via UPI & App Icons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <div style={{ color: '#ffffff', lineHeight: 1.2 }}>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Donate Via</div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>UPI</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800 }}>Donate Via</div>
+              <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600 }}>UPI</div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div 
                 onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
                 style={{ textAlign: 'center', cursor: 'pointer' }}
                 title="Donate via PhonePe"
               >
                 <PhonePeIcon />
-                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>PhonePe</span>
+                <span style={{ fontSize: '0.65rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>PhonePe</span>
               </div>
 
               <div 
@@ -781,7 +784,7 @@ export default function CampaignDetailPage() {
                 title="Donate via GPay"
               >
                 <GPayIcon />
-                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Gpay</span>
+                <span style={{ fontSize: '0.65rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Gpay</span>
               </div>
 
               <div 
@@ -790,38 +793,15 @@ export default function CampaignDetailPage() {
                 title="Donate via BHIM UPI"
               >
                 <BhimUpiIcon />
-                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>Bhim UPI</span>
-              </div>
-
-              <div 
-                onClick={() => handleOpenDonateWithAmount(selectedDonateAmount)}
-                style={{ textAlign: 'center', cursor: 'pointer' }}
-                title="More Payment Options"
-              >
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  backgroundColor: '#27272a',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 0 }}>...</span>
-                </div>
-                <span style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>More</span>
+                <span style={{ fontSize: '0.65rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginTop: '2px' }}>UPI</span>
               </div>
             </div>
           </div>
 
-          {/* Vertical Divider Line */}
-          <div style={{ width: '1px', height: '36px', backgroundColor: '#3f3f46', flexShrink: 0, margin: '0 4px' }} />
-
           {/* Center & Right: Presets & Amount Input & Donate Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[500, 1000, 2500, 5000, 10000].map((amt) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[500, 1000, 2500].map((amt) => (
                 <button
                   key={amt}
                   onClick={() => {
@@ -832,12 +812,13 @@ export default function CampaignDetailPage() {
                     backgroundColor: selectedDonateAmount === amt ? '#ef4444' : '#27272a',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '10px',
-                    padding: '10px 16px',
-                    fontSize: '0.88rem',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
                     fontWeight: 800,
                     cursor: 'pointer',
-                    transition: 'background-color 0.2s ease'
+                    transition: 'background-color 0.2s ease',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   ₹{amt.toLocaleString()}
@@ -850,12 +831,11 @@ export default function CampaignDetailPage() {
               alignItems: 'center',
               backgroundColor: '#18181b',
               border: '1px solid #3f3f46',
-              borderRadius: '10px',
-              padding: '6px 12px',
+              borderRadius: '8px',
+              padding: '4px 8px',
               color: '#ffffff'
             }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#e2e8f0' }}>₹ INR ▾</span>
-              <span style={{ margin: '0 8px', color: '#52525b' }}>|</span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>₹</span>
               <input
                 type="number"
                 value={customDonateAmount}
@@ -864,13 +844,14 @@ export default function CampaignDetailPage() {
                   setSelectedDonateAmount(Number(e.target.value) || null);
                 }}
                 style={{
-                  width: '70px',
+                  width: '56px',
                   background: 'transparent',
                   border: 'none',
                   color: '#ffffff',
                   fontWeight: 800,
-                  fontSize: '0.95rem',
-                  outline: 'none'
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  paddingLeft: '4px'
                 }}
               />
             </div>
@@ -881,12 +862,13 @@ export default function CampaignDetailPage() {
                 backgroundColor: '#ef4444',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '12px 28px',
+                borderRadius: '10px',
+                padding: '10px 20px',
                 fontWeight: 800,
-                fontSize: '1rem',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
+                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
+                whiteSpace: 'nowrap'
               }}
             >
               Donate

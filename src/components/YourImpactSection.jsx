@@ -81,10 +81,10 @@ export default function YourImpactSection({ onOpenDonate }) {
           />
 
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '580px' }}>
-            <span style={{ fontSize: '1.35rem', fontStyle: 'italic', fontWeight: 500, color: 'rgba(255,255,255,0.9)' }}>
+            <span className="monthly-subheading">
               Feed a Helpless Animal.
             </span>
-            <h2 style={{ fontSize: '3rem', fontWeight: 800, color: '#f87171', lineHeight: 1.1, margin: '4px 0 16px' }}>
+            <h2 className="monthly-heading">
               Every Month.
             </h2>
             <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.6, marginBottom: '24px' }}>
