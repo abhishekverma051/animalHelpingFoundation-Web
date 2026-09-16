@@ -1,7 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-    ? 'http://localhost:5001/api' 
-    : 'https://animalhelpingfoundation-web.onrender.com/api');
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+      return 'http://localhost:5001/api';
+    }
+  }
+  return 'https://animalhelpingfoundation-web.onrender.com/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('admin_token');
@@ -14,7 +21,7 @@ const getAuthHeaders = () => {
 const handleResponse = async (res, defaultErrorMessage) => {
   const contentType = res.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Backend API server is offline or unreachable. Please check backend connection.');
+    throw new Error('Payment server is currently connecting or busy. Please try again in a few moments.');
   }
 
   const data = await res.json();
@@ -22,6 +29,20 @@ const handleResponse = async (res, defaultErrorMessage) => {
     throw new Error(data.message || defaultErrorMessage);
   }
   return data;
+};
+
+// Safe fetch with 1 auto-retry for handling mobile network hiccups or server cold starts
+const safeFetch = async (url, options = {}, retries = 1) => {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    if (retries > 0) {
+      console.warn('[API] Initial fetch failed, retrying in 1.5s...', err.message);
+      await new Promise(r => setTimeout(r, 1500));
+      return await fetch(url, options);
+    }
+    throw err;
+  }
 };
 
 export const api = {
@@ -170,7 +191,7 @@ export const api = {
 
   // Razorpay Payment Gateway APIs
   createRazorpayOrder: async (amount, campaignId) => {
-    const res = await fetch(`${API_BASE_URL}/razorpay/create-order`, {
+    const res = await safeFetch(`${API_BASE_URL}/razorpay/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount, campaignId })
@@ -179,7 +200,7 @@ export const api = {
   },
 
   verifyRazorpayPayment: async (paymentData) => {
-    const res = await fetch(`${API_BASE_URL}/razorpay/verify-payment`, {
+    const res = await safeFetch(`${API_BASE_URL}/razorpay/verify-payment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(paymentData)
