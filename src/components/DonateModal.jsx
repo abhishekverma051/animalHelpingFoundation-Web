@@ -17,6 +17,10 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
     paymentMethod: 'upi'
   });
   const [razorpayPaymentId, setRazorpayPaymentId] = useState('');
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState('');
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
 
   useEffect(() => {
     if (isOpen && initialAmount) {
@@ -66,12 +70,36 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
     setSelectedAmount(null);
   };
 
+  const handleApplyPromo = () => {
+    const code = promoCodeInput.trim().toUpperCase();
+    if (!code) {
+      setPromoError('Please enter a promo code.');
+      setPromoSuccess('');
+      return;
+    }
+    if (['TEST0', 'METATEST', 'FREE100'].includes(code)) {
+      setAppliedPromo(code);
+      setPromoSuccess('Promo Code Applied: 100% Free Test Donation (₹0)');
+      setPromoError('');
+    } else {
+      setPromoError('Invalid promo code. Use TEST0 for ₹0 testing.');
+      setPromoSuccess('');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo('');
+    setPromoCodeInput('');
+    setPromoSuccess('');
+    setPromoError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     const numericAmt = Number(customAmount || selectedAmount || 500);
-    if (!numericAmt || numericAmt <= 0) {
+    if (!appliedPromo && (!numericAmt || numericAmt <= 0)) {
       setError('Please select or enter a valid donation amount.');
       return;
     }
@@ -93,6 +121,43 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
 
     const effectiveDonorName = isAnonymous ? 'Anonymous' : (formData.name ? formData.name.trim() : 'Kind Heart');
     const effectiveEmail = formData.email ? formData.email.trim() : '';
+
+    // If Test Promo Code is applied: Process ₹0 donation directly and trigger Meta Pixel Purchase event!
+    if (appliedPromo) {
+      try {
+        setSubmitting(true);
+        const res = await api.createDonation({
+          campaignId: campaign ? campaign.id : 'camp-1',
+          donorName: effectiveDonorName,
+          email: effectiveEmail,
+          phone: formData.phone,
+          amount: numericAmt,
+          isAnonymous,
+          promoCode: appliedPromo
+        });
+
+        const testPayId = `pay_test_promo_${Date.now()}`;
+        setRazorpayPaymentId(testPayId);
+        setSubmitted(true);
+
+        // Fire Meta Pixel Purchase event with the target amount for ad attribution testing
+        pixel.trackPurchase({
+          orderId: testPayId,
+          amount: numericAmt,
+          currency: 'INR',
+          campaignId: campaign ? campaign.id : 'camp-1',
+          campaignTitle: campaign ? campaign.title : 'Animal Welfare Donation'
+        });
+
+        if (onSuccess) onSuccess();
+      } catch (err) {
+        console.error('Test Promo Donation Error:', err);
+        setError(err.message || 'Failed to process test promo donation.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -307,7 +372,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
 
               {/* Anonymous Donation Checkbox Card */}
               <div style={{
-                margin: '16px 0 24px',
+                margin: '16px 0 16px',
                 padding: '14px 16px',
                 backgroundColor: '#f8fafc',
                 borderRadius: '14px',
@@ -332,6 +397,71 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
                 </div>
               </div>
 
+              {/* Promo Code / Test Code Card */}
+              <div style={{
+                marginBottom: '20px',
+                padding: '12px 14px',
+                backgroundColor: appliedPromo ? '#f0fdf4' : '#fafafa',
+                borderRadius: '12px',
+                border: appliedPromo ? '1px solid #bbf7d0' : '1px dashed #cbd5e1'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: appliedPromo ? '#16a34a' : '#475569' }}>
+                    {appliedPromo ? `✓ Promo Code Applied (${appliedPromo})` : 'Have a Promo / Test Code?'}
+                  </span>
+                  {appliedPromo && (
+                    <button 
+                      type="button" 
+                      onClick={handleRemovePromo}
+                      style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                {!appliedPromo ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Enter promo code (e.g. TEST0)" 
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                      style={{ 
+                        flex: 1, 
+                        padding: '8px 12px', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '8px', 
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        textTransform: 'uppercase'
+                      }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleApplyPromo}
+                      style={{ 
+                        backgroundColor: '#0f172a', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        borderRadius: '8px', 
+                        padding: '8px 16px', 
+                        fontSize: '0.85rem', 
+                        fontWeight: 700, 
+                        cursor: 'pointer' 
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.82rem', color: '#15803d', fontWeight: 600 }}>
+                    🎉 100% Free Test Donation Enabled (Payable: ₹0). Fires live Meta Pixel Purchase for ad testing!
+                  </div>
+                )}
+                {promoSuccess && <div style={{ color: '#16a34a', fontSize: '0.78rem', marginTop: '6px', fontWeight: 700 }}>✓ {promoSuccess}</div>}
+                {promoError && <div style={{ color: '#dc2626', fontSize: '0.78rem', marginTop: '6px', fontWeight: 600 }}>{promoError}</div>}
+              </div>
+
               <button 
                 type="submit" 
                 disabled={submitting} 
@@ -344,11 +474,18 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  backgroundColor: appliedPromo ? '#16a34a' : undefined
                 }}
               >
                 <Heart size={18} fill="#ffffff" />
-                <span>{submitting ? 'Opening Razorpay Payment...' : `Proceed to Pay ${finalAmount}`}</span>
+                <span>
+                  {submitting 
+                    ? 'Processing...' 
+                    : appliedPromo 
+                      ? 'Complete Free Test Donation (₹0)' 
+                      : `Proceed to Pay ${finalAmount}`}
+                </span>
               </button>
             </form>
           </>
