@@ -429,7 +429,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 700, color: appliedPromo ? '#16a34a' : '#475569' }}>
-                    {appliedPromo ? `✓ Promo Code Applied (${appliedPromo})` : 'Have a Promo / Test Code?'}
+                    {appliedPromo ? `✓ Promo Code Applied (${appliedPromo})` : 'Have a Promo Code?'}
                   </span>
                   {appliedPromo && (
                     <button 
@@ -445,7 +445,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input 
                       type="text" 
-                      placeholder="Enter promo code (e.g. TEST0)" 
+                      placeholder="Enter promo code" 
                       value={promoCodeInput}
                       onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
                       style={{ 

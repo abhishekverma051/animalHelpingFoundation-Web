@@ -24,6 +24,8 @@ const __dirname = path.dirname(__filename);
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
 
 const app = express();
+// Enable trust proxy for Render / reverse proxies (fixes ERR_ERL_UNEXPECTED_X_FORWARDED_FOR)
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -85,6 +87,7 @@ const generalLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Too many requests from this IP address. Please try again after 15 minutes.'
@@ -98,6 +101,7 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Too many failed login attempts. Account temporarily locked for 15 minutes to prevent brute-force attacks.'
