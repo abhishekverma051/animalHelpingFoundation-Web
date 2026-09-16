@@ -121,11 +121,6 @@ function PublicHomePage() {
 }
 
 export default function App() {
-  React.useEffect(() => {
-    pixel.init();
-    pixel.pageView();
-  }, []);
-
   return (
     <AuthProvider>
       <PixelPageViewTracker />
