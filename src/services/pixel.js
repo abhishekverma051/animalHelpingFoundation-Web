@@ -13,7 +13,7 @@ export const pixel = {
    * Initialize Meta Pixel with Pixel ID
    */
   init: (pixelId) => {
-    const id = pixelId || import.meta.env.VITE_META_PIXEL_ID || '1523368109117574';
+    const id = pixelId || import.meta.env.VITE_META_PIXEL_ID || '1073347982352374';
     if (!id) {
       if (import.meta.env.DEV) {
         console.warn('[Meta Pixel] Pixel ID is not configured.');
