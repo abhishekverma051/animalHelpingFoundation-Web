@@ -14,6 +14,7 @@ import DonateModal from './components/DonateModal';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import CampaignDetailPage from './pages/public/CampaignDetailPage';
+import ThankYouPage from './pages/public/ThankYouPage';
 import { CheckCircle } from 'lucide-react';
 import pixel from './services/pixel';
 
@@ -132,6 +133,8 @@ export default function App() {
         {/* Public Routes */}
         <Route path="/" element={<PublicHomePage />} />
         <Route path="/campaign/:id" element={<CampaignDetailPage />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
+        <Route path="/donation-success" element={<ThankYouPage />} />
 
         {/* Admin Authentication & Panel Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

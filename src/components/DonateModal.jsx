@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, CheckCircle, Heart, Shield, User, Mail, Phone, Lock } from 'lucide-react';
 import { api } from '../services/api';
 import pixel from '../services/pixel';
 
 export default function DonateModal({ isOpen, onClose, campaign, onSuccess, initialAmount }) {
+  const navigate = useNavigate();
   const [selectedAmount, setSelectedAmount] = useState(initialAmount || 1000);
   const [customAmount, setCustomAmount] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -150,6 +152,16 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
         });
 
         if (onSuccess) onSuccess();
+        onClose();
+        navigate('/thank-you', {
+          state: {
+            paymentId: testPayId,
+            amount: numericAmt,
+            donorName: effectiveDonorName,
+            campaignTitle: campaign ? campaign.title : 'Emergency Stray Animal Care & Rescue',
+            isAnonymous
+          }
+        });
       } catch (err) {
         console.error('Test Promo Donation Error:', err);
         setError(err.message || 'Failed to process test promo donation.');
@@ -220,6 +232,16 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
             });
 
             if (onSuccess) onSuccess();
+            onClose();
+            navigate('/thank-you', {
+              state: {
+                paymentId: response.razorpay_payment_id,
+                amount: numericAmt,
+                donorName: effectiveDonorName,
+                campaignTitle: campaign ? campaign.title : 'Emergency Stray Animal Care & Rescue',
+                isAnonymous
+              }
+            });
           } catch (verifyErr) {
             console.error('Payment Verification Failed:', verifyErr);
             setError(verifyErr.message || 'Payment verification failed. If money was deducted, please contact us.');
