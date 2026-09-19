@@ -88,14 +88,14 @@ a {
   color: #ffffff;
 }
 
-/* Navbar with 80px horizontal space & 24px vertical space */
+/* Navbar - compact & sleek */
 .navbar {
   background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-  padding: 24px 80px;
+  padding: 12px 60px;
 }
 
 .navbar-content {
@@ -106,7 +106,7 @@ a {
 }
 
 .brand-logo img {
-  height: 44px;
+  height: 38px;
   object-fit: contain;
 }
 
@@ -133,8 +133,8 @@ a {
   background: var(--primary-gradient);
   color: #ffffff;
   font-weight: 700;
-  font-size: 14px;
-  padding: 10px 24px;
+  font-size: 13.5px;
+  padding: 9px 22px;
   border-radius: var(--radius-full);
   box-shadow: 0 4px 14px rgba(211, 32, 32, 0.35);
 }
@@ -152,7 +152,7 @@ a {
 
 /* Hero Section */
 .hero-wrapper {
-  padding-top: 16px;
+  padding-top: 14px;
   padding-bottom: 0px;
   padding-left: 20px;
   padding-right: 20px;
@@ -162,12 +162,12 @@ a {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  min-height: 500px;
+  min-height: 600px;
   background-color: #120a0a;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 40px 44px;
+  padding: 48px 52px;
   box-shadow: var(--shadow-lg);
 }
 
@@ -190,8 +190,8 @@ a {
   height: 100%;
   background: linear-gradient(
     180deg,
-    rgba(12, 6, 6, 0.25) 0%,
-    rgba(12, 6, 6, 0.7) 45%,
+    rgba(12, 6, 6, 0.15) 0%,
+    rgba(12, 6, 6, 0.48) 42%,
     rgba(12, 6, 6, 0.94) 100%
   );
   z-index: 2;
@@ -224,12 +224,12 @@ a {
   position: relative;
   z-index: 3;
   color: #ffffff;
-  max-width: 700px;
+  max-width: 760px;
 }
 
 .hero-stats-row {
-  margin-bottom: 20px;
-  max-width: 420px;
+  margin-bottom: 22px;
+  max-width: 440px;
 }
 
 .hero-stats-info {
@@ -237,7 +237,7 @@ a {
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .hero-raised-val {
@@ -254,8 +254,8 @@ a {
 
 .hero-progress-track {
   width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  height: 5px;
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -267,12 +267,13 @@ a {
 }
 
 .hero-title {
-  font-size: 48px;
+  font-size: 46px;
   font-weight: 800;
-  line-height: 1.12;
+  line-height: 1.15;
   letter-spacing: -0.02em;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .hero-title .highlight {
@@ -280,12 +281,13 @@ a {
 }
 
 .hero-subtitle {
-  font-size: 14px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.88);
-  margin-bottom: 28px;
-  max-width: 600px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 32px;
+  max-width: 640px;
   font-weight: 400;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
 }
 
 .hero-actions {

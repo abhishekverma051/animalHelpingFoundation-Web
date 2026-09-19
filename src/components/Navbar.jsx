@@ -6,17 +6,7 @@ export default function Navbar({ onOpenDonate, isAdmin = false }) {
 
   return (
     <header>
-      {/* Top Meta Bar */}
-      <div className="top-bar">
-        <div className="top-bar-content">
-          <a href="#blogs" className="top-bar-link">BLOGS</a>
-          <a href="#contacts" className="top-bar-link">CONTACTS US</a>
-          <a href="#locations" className="top-bar-link">LOCATIONS</a>
-          <a href="#help" className="top-bar-link">HELP & SUPPORT</a>
-        </div>
-      </div>
-
-      {/* Main Navbar with 80px horizontal space from device edge & 24px vertical space */}
+      {/* Main Navbar */}
       <nav className="navbar">
         <div className="navbar-content">
           <a href="/" className="brand-logo">

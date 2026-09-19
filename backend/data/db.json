@@ -93,7 +93,7 @@
       "description": "Providing urgent medical treatment, life-saving surgeries, and intensive ICU care for street animals hit by vehicles or critical illnesses.",
       "image": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80",
       "goalAmount": 500000,
-      "raisedAmount": 390000,
+      "raisedAmount": 391000,
       "status": "Active",
       "createdAt": "2026-08-01T10:00:00Z",
       "additionalCards": [
@@ -208,6 +208,17 @@
     }
   ],
   "donations": [
+    {
+      "id": "don-1789585550206-456",
+      "campaignId": "camp-1",
+      "donorName": "Anonymous",
+      "email": "",
+      "phone": "1234567890",
+      "amount": 1000,
+      "isAnonymous": true,
+      "status": "Completed",
+      "createdAt": "2026-09-16T19:05:50.206Z"
+    },
     {
       "id": "don-1789407912683-146",
       "campaignId": "camp-1789407826990",

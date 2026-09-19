@@ -84,7 +84,7 @@ export default function DonateModal({ isOpen, onClose, campaign, onSuccess, init
       setPromoSuccess('Promo Code Applied: 100% Free Test Donation (₹0)');
       setPromoError('');
     } else {
-      setPromoError('Invalid promo code. Use TEST0 for ₹0 testing.');
+      setPromoError('Invalid promo code.');
       setPromoSuccess('');
     }
   };
