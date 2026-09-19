@@ -15,21 +15,21 @@ const fallbackBlogStories = [
     tag: 'Animal Rescue | 08/08/2026',
     title: 'What Happens After an Animal Is Rescued?',
     desc: 'From emergency rescue to recovery, discover the journey of an animal receiving care, treatment, and a second chance.',
-    image: '/assets/impact3.png'
+    image: '/assets/an3.jpg'
   },
   {
     id: 'blog-2',
     tag: 'Animal Rescue | 08/08/2026',
     title: 'From the Streets to Safety: A Second Chance',
     desc: 'A look into the story of a rescued animal, the challenges they faced, and the care that helped them recover.',
-    image: '/assets/card4_hd.jpg'
+    image: '/assets/an2.jpg'
   },
   {
     id: 'blog-3',
     tag: 'Animal Rescue | 08/08/2026',
     title: '5 Simple Ways You Can Help Animals in Need',
     desc: 'Small acts of kindness can make a lasting difference. Here are simple ways to support animals in your everyday life.',
-    image: '/assets/impact2.png'
+    image: '/assets/an1.jpg'
   }
 ];
 
@@ -125,7 +125,7 @@ export default function LiveFeedAndStoriesSection({ campaign, donations }) {
         </div>
 
         {/* Stories Section */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }} id="blogs">
+        <div style={{ textAlign: 'center', marginBottom: '40px'  }} id="blogs">
           <span className="pill-tag" style={{ background: 'rgba(255,255,255,0.1)', color: '#f87171' }}>INSIGHTS & STORIES</span>
           <h2 className="section-title" style={{ color: '#ffffff' }}>Stories That Inspire Compassion & Action</h2>
         </div>

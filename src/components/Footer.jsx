@@ -17,7 +17,7 @@ export default function Footer() {
         <div className="footer-grid">
           {/* Brand & Address Column */}
           <div className="footer-brand-col">
-            <img src="/assets/webLogo.png" alt="Animal Helping Foundation" className="footer-logo" />
+            <img src="/assets/footerImage.png" alt="Animal Helping Foundation" className="footer-logo" />
             <div className="footer-address-box">
               <strong>Head Office:</strong>
               <div>Ward Number 2, Kothi (Satna)-485005,</div>

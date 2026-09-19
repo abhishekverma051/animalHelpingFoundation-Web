@@ -74,27 +74,23 @@ export default function RecognitionSection({ onOpenDonate }) {
 
           {/* Featured & Recognized Banner */}
           <div className="featured-banner">
-            <div className="featured-banner-left">
-              <img src="/assets/medal.png" alt="Medal Icon" className="featured-medal-icon" />
-              <div>
-                <div className="featured-subheading">
-                  Our Work Has Been
-                </div>
-                <div className="featured-heading">
-                  Featured & Recognized
-                </div>
-                <div className="featured-media-logos">
-                  <span>ANI NEWS</span>
-                  <span>DNA</span>
-                  <span>oneindia</span>
-                  <span>BusinessWorld</span>
-                  <span>ABP</span>
-                </div>
-              </div>
-            </div>
+            <img src="/assets/nm.png" alt="Featured Background" className="featured-banner-bg" />
+            <img src="/assets/medal.png" alt="Medal Icon" className="featured-medal-icon" />
 
-            <div className="featured-banner-img-box">
-              <img src="/assets/vet_treating.png" alt="Vet Treating Puppy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div className="featured-banner-content">
+              <div className="featured-subheading">
+                Our Work Has Been
+              </div>
+              <div className="featured-heading">
+                Featured & Recognized
+              </div>
+              <div className="featured-media-logos">
+                <span>ANI NEWS</span>
+                <span>DNA</span>
+                <span>oneindia</span>
+                <span>BusinessWorld</span>
+                <span>ABP</span>
+              </div>
             </div>
           </div>
         </div>

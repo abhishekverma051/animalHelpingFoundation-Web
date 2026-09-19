@@ -28,7 +28,7 @@ export default function YourImpactSection({ onOpenDonate }) {
         <div className="impact-cards-grid">
           {/* Card 1 */}
           <div className="impact-card">
-            <img src="/assets/impact1.png" alt="Rescue Animals in Need" className="impact-card-img" />
+            <img src="/assets/rescue.png" alt="Rescue Animals in Need" className="impact-card-img" />
             <div className="impact-card-overlay"></div>
             <div className="impact-watermark">01</div>
             <div className="impact-card-content">
@@ -43,7 +43,7 @@ export default function YourImpactSection({ onOpenDonate }) {
 
           {/* Card 2 */}
           <div className="impact-card">
-            <img src="/assets/impact2.png" alt="Provide Food & Nutrition" className="impact-card-img" />
+            <img src="/assets/rescue2.png" alt="Provide Food & Nutrition" className="impact-card-img" />
             <div className="impact-card-overlay"></div>
             <div className="impact-watermark">02</div>
             <div className="impact-card-content">
@@ -58,7 +58,7 @@ export default function YourImpactSection({ onOpenDonate }) {
 
           {/* Card 3 */}
           <div className="impact-card">
-            <img src="/assets/impact3.png" alt="Fund Medical Care" className="impact-card-img" />
+            <img src="/assets/rescue3.png" alt="Fund Medical Care" className="impact-card-img" />
             <div className="impact-card-overlay"></div>
             <div className="impact-watermark">03</div>
             <div className="impact-card-content">
@@ -75,7 +75,7 @@ export default function YourImpactSection({ onOpenDonate }) {
         {/* Monthly Donation Banner Card */}
         <div className="monthly-donation-card">
           <img 
-            src="/assets/monthly_puppy.png" 
+            src="/assets/evm.png" 
             alt="Sad Puppy" 
             className="monthly-donation-bg" 
           />
