@@ -63,13 +63,12 @@ export default function Footer() {
 
           {/* Contact Us Column */}
           <div className="footer-contact-col">
-            <h4 className="footer-col-title">Contact Us</h4>
+            <h4 className="footer-col-title"><a href="/contact" style={{ color: '#ffffff', textDecoration: 'none' }}>Contact Us</a></h4>
             <ul className="footer-link-list">
-              <li>Business</li>
-              <li>Customer Support</li>
-              <li>Career</li>
-              <li className="footer-contact-highlight">sales@cheemoboilers.com</li>
-              <li className="footer-contact-highlight">Tel:+91-172-5090487, 5055666</li>
+              <li><a href="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Customer & Donor Support</a></li>
+              <li><a href="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Rescue Helplines</a></li>
+              <li><a href="mailto:animalhelpingfoundation06@gmail.com" className="footer-contact-highlight" style={{ wordBreak: 'break-all' }}>animalhelpingfoundation06@gmail.com</a></li>
+              <li><a href="tel:+918269639451" className="footer-contact-highlight">Tel: +91 8269639451</a></li>
             </ul>
           </div>
         </div>

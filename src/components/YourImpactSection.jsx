@@ -70,6 +70,34 @@ export default function YourImpactSection({ onOpenDonate }) {
               </p>
             </div>
           </div>
+           <div className="impact-card">
+            <img src="/assets/cow.png" alt="Rescue Animals in Need" className="impact-card-img" />
+            <div className="impact-card-overlay"></div>
+            <div className="impact-watermark">04</div>
+            <div className="impact-card-content">
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px', color: '#fff' }}>
+               Provide Safe Shelter
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+               Give rescued animals a safe, clean, and caring environment while they recover and find support.
+              </p>
+            </div>
+          </div>
+
+
+           <div className="impact-card">
+            <img src="/assets/help.png" alt="Rescue Animals in Need" className="impact-card-img" />
+            <div className="impact-card-overlay"></div>
+            <div className="impact-watermark">05</div>
+            <div className="impact-card-content">
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px', color: '#fff' }}>
+                 Help Them Find a Better Life
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+              Support rehabilitation, recovery, and responsible adoption so rescued animals can move toward a safer future.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Monthly Donation Banner Card */}

@@ -51,7 +51,7 @@ export default function AboutSection() {
         {/* Multi-panel Photo Collage */}
         <div style={{ borderRadius: '24px', overflow: 'hidden', marginBottom: '40px', boxShadow: 'var(--shadow-md)' }}>
           <img 
-            src="/assets/community.png" 
+            src="/assets/assets232.png" 
             alt="Turning Compassion Into Action Collage" 
             style={{ width: '100%', height: 'auto', display: 'block' }}
           />

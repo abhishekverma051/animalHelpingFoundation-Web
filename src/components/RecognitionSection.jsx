@@ -58,7 +58,7 @@ export default function RecognitionSection({ onOpenDonate }) {
             {/* Card 3: Dark Red Statement Card */}
             <div className="stat-box-red">
               <div style={{ height: '110px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
-                <img src="/assets/rubble_rescue.png" alt="Rescue Under Rubble" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="/assets/oxx.png" alt="Rescue Under Rubble" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, marginBottom: '20px' }}>
                 Our work isn't measured only in numbers. It's measured in lives rescued, wounds healed, hungry animals fed, and vulnerable lives given a safe place to recover.
@@ -85,11 +85,11 @@ export default function RecognitionSection({ onOpenDonate }) {
                 Featured & Recognized
               </div>
               <div className="featured-media-logos">
-                <span>ANI NEWS</span>
-                <span>DNA</span>
-                <span>oneindia</span>
-                <span>BusinessWorld</span>
-                <span>ABP</span>
+                <img src="/assets/anii.png" alt="ANI NEWS" className="featured-media-logo-img" />
+                <img src="/assets/int.png" alt="India Tv" className="featured-media-logo-img" />
+                <img src="/assets/oneind.png" alt="One India" className="featured-media-logo-img" />
+                <img src="/assets/dna.png" alt="DNA" className="featured-media-logo-img" />
+                <img src="/assets/abp.png" alt="ABP" className="featured-media-logo-img" />
               </div>
             </div>
           </div>

@@ -246,5 +246,39 @@ export const api = {
       headers: getAuthHeaders()
     });
     return handleResponse(res, 'Failed to delete blog story');
+  },
+
+  // Contact Queries APIs
+  submitContactQuery: async (queryData) => {
+    const res = await safeFetch(`${API_BASE_URL}/queries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(queryData)
+    });
+    return handleResponse(res, 'Failed to submit contact query');
+  },
+
+  getAdminQueries: async () => {
+    const res = await fetch(`${API_BASE_URL}/admin/queries`, {
+      headers: getAuthHeaders()
+    });
+    return handleResponse(res, 'Failed to fetch contact queries');
+  },
+
+  updateQueryStatus: async (id, status) => {
+    const res = await fetch(`${API_BASE_URL}/admin/queries/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status })
+    });
+    return handleResponse(res, 'Failed to update query status');
+  },
+
+  deleteQuery: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/admin/queries/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return handleResponse(res, 'Failed to delete query');
   }
 };

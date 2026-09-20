@@ -407,5 +407,37 @@
       "image": "/assets/impact2.png",
       "createdAt": "2026-08-08T12:00:00.000Z"
     }
+  ],
+  "queries": [
+    {
+      "id": "qry_1789937535401_zp5sj",
+      "fullName": "wbiwj",
+      "contactNumber": "1234890",
+      "email": "sdjdjs@t.com",
+      "subject": "jdjsjs",
+      "message": "dssdc",
+      "status": "New",
+      "createdAt": "2026-09-20T20:52:15.403Z"
+    },
+    {
+      "id": "qry_sample_01",
+      "fullName": "Rohan Sharma",
+      "contactNumber": "+918269639451",
+      "email": "animalhelpingfoundation06@gmail.com",
+      "subject": "Emergency Animal Rescue Coordination in Jodhpur",
+      "message": "Hello team, I spotted an injured cow near Nandanwan Jodhpur needing urgent veterinary care. Please dispatch the rescue helpline team as soon as possible.",
+      "status": "New",
+      "createdAt": "2026-09-20T20:44:51.678Z"
+    },
+    {
+      "id": "qry_sample_02",
+      "fullName": "Pooja Verma",
+      "contactNumber": "+919876543210",
+      "email": "pooja.verma@example.com",
+      "subject": "Volunteering for Weekend Feeding Drives",
+      "message": "Hi, I would love to join your weekend feeding and stray animal care initiatives. Please share how I can get involved.",
+      "status": "In Progress",
+      "createdAt": "2026-09-19T20:44:51.684Z"
+    }
   ]
 }

@@ -14,9 +14,10 @@ export default function Navbar({ onOpenDonate, isAdmin = false }) {
           </a>
 
           <ul className={`nav-menu ${mobileOpen ? 'mobile-open' : ''}`}>
-            <li><a href="/" className="nav-link active" onClick={() => setMobileOpen(false)}>Home</a></li>
+            <li><a href="/" className="nav-link" onClick={() => setMobileOpen(false)}>Home</a></li>
             <li><a href="/#explore" className="nav-link" onClick={() => setMobileOpen(false)}>Explore Campaigns</a></li>
             <li><a href="/#about" className="nav-link" onClick={() => setMobileOpen(false)}>About Us</a></li>
+            <li><a href="/contact" className="nav-link" onClick={() => setMobileOpen(false)}>Contact Us</a></li>
           </ul>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

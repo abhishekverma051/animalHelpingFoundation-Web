@@ -197,20 +197,34 @@ const blogSchema = new mongoose.Schema({
   createdAt: { type: String, default: () => new Date().toISOString() }
 });
 
+const querySchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  fullName: { type: String, required: true },
+  contactNumber: { type: String, required: true },
+  email: { type: String, required: true },
+  subject: { type: String, required: true },
+  message: { type: String, required: true },
+  status: { type: String, enum: ['New', 'In Progress', 'Resolved'], default: 'New' },
+  createdAt: { type: String, default: () => new Date().toISOString() }
+});
+
 const CampaignModel = mongoose.model('Campaign', campaignSchema);
 const FeaturedModel = mongoose.model('Featured', featuredSchema);
 const AdminModel = mongoose.model('Admin', adminSchema);
 const DonationModel = mongoose.model('Donation', donationSchema);
 const BlogModel = mongoose.model('Blog', blogSchema);
+const QueryModel = mongoose.model('Query', querySchema);
 
 // Helper functions for file DB persistence
 const readFileDB = () => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!parsed.queries) parsed.queries = [];
+    return parsed;
   } catch (error) {
     console.error('Error reading file database:', error);
-    return { admin: {}, featuredIds: [], campaigns: [], donations: [], blogs: [] };
+    return { admin: {}, featuredIds: [], campaigns: [], donations: [], blogs: [], queries: [] };
   }
 };
 
@@ -1200,6 +1214,155 @@ app.delete('/api/blogs/:id', verifyAdminToken, async (req, res) => {
     success: true,
     message: 'Blog story deleted successfully.'
   });
+});
+
+// -------------------------------------------------------------
+// CONTACT US / QUERIES ENDPOINTS
+// -------------------------------------------------------------
+
+// 1. Submit Public Contact Form Query
+app.post('/api/queries', async (req, res) => {
+  try {
+    const { fullName, contactNumber, email, subject, message } = req.body;
+
+    if (!fullName || !fullName.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide your full name.' });
+    }
+    if (!contactNumber || !contactNumber.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide your contact number.' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide your email address.' });
+    }
+    if (!subject || !subject.trim()) {
+      return res.status(400).json({ success: false, message: 'Please enter the subject of your query.' });
+    }
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'Please enter your message.' });
+    }
+
+    const newQuery = {
+      id: 'qry_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      fullName: sanitizeText(fullName).trim(),
+      contactNumber: sanitizeText(contactNumber).trim(),
+      email: sanitizeText(email).trim().toLowerCase(),
+      subject: sanitizeText(subject).trim(),
+      message: sanitizeText(message).trim(),
+      status: 'New',
+      createdAt: new Date().toISOString()
+    };
+
+    if (isMongoConnected) {
+      await QueryModel.create(newQuery);
+    } else {
+      const db = readFileDB();
+      if (!db.queries) db.queries = [];
+      db.queries.unshift(newQuery);
+      writeFileDB(db);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Thank you for reaching out! Your query has been received. Our team will contact you shortly.',
+      data: newQuery
+    });
+  } catch (err) {
+    console.error('Error saving contact query:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit query. Please try again later.'
+    });
+  }
+});
+
+// 2. Admin: Get all Contact Queries
+app.get('/api/admin/queries', verifyAdminToken, async (req, res) => {
+  try {
+    let queries = [];
+    if (isMongoConnected) {
+      queries = await QueryModel.find().sort({ createdAt: -1 });
+    } else {
+      const db = readFileDB();
+      queries = (db.queries || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    res.json({
+      success: true,
+      queries
+    });
+  } catch (err) {
+    console.error('Error fetching admin queries:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch contact queries.' });
+  }
+});
+
+// 3. Admin: Update Query Status ('New' | 'In Progress' | 'Resolved')
+app.put('/api/admin/queries/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['New', 'In Progress', 'Resolved'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status value.' });
+    }
+
+    let updatedQuery = null;
+    if (isMongoConnected) {
+      updatedQuery = await QueryModel.findOneAndUpdate(
+        { id },
+        { status },
+        { new: true }
+      );
+    } else {
+      const db = readFileDB();
+      if (!db.queries) db.queries = [];
+      const index = db.queries.findIndex(q => q.id === id);
+      if (index !== -1) {
+        db.queries[index].status = status;
+        updatedQuery = db.queries[index];
+        writeFileDB(db);
+      }
+    }
+
+    if (!updatedQuery) {
+      return res.status(404).json({ success: false, message: 'Query not found.' });
+    }
+
+    res.json({
+      success: true,
+      message: `Query marked as ${status}.`,
+      query: updatedQuery
+    });
+  } catch (err) {
+    console.error('Error updating query status:', err);
+    res.status(500).json({ success: false, message: 'Failed to update query status.' });
+  }
+});
+
+// 4. Admin: Delete Query
+app.delete('/api/admin/queries/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (isMongoConnected) {
+      await QueryModel.deleteOne({ id });
+    } else {
+      const db = readFileDB();
+      if (db.queries) {
+        db.queries = db.queries.filter(q => q.id !== id);
+        writeFileDB(db);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Query deleted successfully.'
+    });
+  } catch (err) {
+    console.error('Error deleting query:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete query.' });
+  }
 });
 
 app.listen(PORT, () => {

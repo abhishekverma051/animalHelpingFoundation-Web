@@ -784,14 +784,16 @@ a {
 .featured-banner {
   position: relative;
   background: #1d1d1b;
-  border-radius: 18px;
-  padding: 36px 40px;
+  border-radius: 20px;
+  min-height: 310px;
+  padding: 50px 56px;
   color: #fff;
   overflow: hidden;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 60px;
+  box-sizing: border-box;
 }
 
 .featured-banner-bg {
@@ -815,31 +817,47 @@ a {
   position: absolute;
   top: 24px;
   right: 28px;
-  width: 38px;
+  width: 40px;
   height: auto;
   z-index: 3;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
 }
 
 .featured-subheading {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: #ffffff;
+  margin-bottom: 6px;
 }
 
 .featured-heading {
-  font-size: 1.6rem;
+  font-size: 2.1rem;
   font-weight: 800;
   font-style: italic;
   color: #f87171;
+  line-height: 1.2;
 }
 
 .featured-media-logos {
   display: flex;
-  gap: 20px;
+  gap: 22px;
   align-items: center;
-  margin-top: 16px;
-  opacity: 0.85;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.featured-media-logo-img {
+  height: 28px;
+  width: auto;
+  max-width: 110px;
+  object-fit: contain;
+  opacity: 0.95;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.featured-media-logo-img:hover {
+  transform: translateY(-2px);
+  opacity: 1;
 }
 
 .featured-media-logos span {
@@ -1477,6 +1495,10 @@ a {
     gap: 12px 16px;
     flex-wrap: wrap;
   }
+  .featured-media-logo-img {
+    height: 22px;
+    max-width: 85px;
+  }
   .featured-media-logos span {
     font-size: 0.95rem;
   }
@@ -1630,4 +1652,33 @@ a {
   z-index: 10000;
   animation: toastSlideIn 0.3s ease-out;
 }
+
+/* Contact Us Page Interactive Elements */
+.contact-info-card:hover {
+  transform: translateY(-2px);
+  border-color: #739c3e !important;
+  box-shadow: 0 8px 20px rgba(115, 156, 62, 0.08) !important;
+}
+
+.contact-form-input:focus {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+}
+
+.contact-submit-btn:hover {
+  background-color: #be123c !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.45) !important;
+}
+
+.spin-anim {
+  animation: spin 1s linear infinite;
+}
+
+@media (max-width: 640px) {
+  .banner-decor-left, .banner-decor-right {
+    display: none !important;
+  }
+}
+
 

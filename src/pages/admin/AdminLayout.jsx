@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, HeartHandshake, BookOpen, LogOut, Shield, ExternalLink, Menu, X } from 'lucide-react';
+import { LayoutDashboard, HeartHandshake, BookOpen, LogOut, Shield, ExternalLink, Menu, X, MessageSquare } from 'lucide-react';
 import webLogo from '../../assets/webLogo.png';
 import AdminDashboard from './AdminDashboard';
 import AdminCampaigns from './AdminCampaigns';
 import AdminBlogs from './AdminBlogs';
+import AdminQueries from './AdminQueries';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
@@ -123,6 +124,27 @@ export default function AdminLayout() {
               >
                 <BookOpen size={16} />
                 <span>Blogs & Stories</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('queries')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: activeTab === 'queries' ? '#d32020' : 'transparent',
+                  color: activeTab === 'queries' ? '#ffffff' : '#94a3b8',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <MessageSquare size={16} />
+                <span>Queries</span>
               </button>
             </nav>
 
@@ -273,6 +295,26 @@ export default function AdminLayout() {
               <span>3. Blogs & Stories</span>
             </button>
 
+            <button
+              onClick={() => handleSelectTab('queries')}
+              style={{
+                padding: '12px 16px',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: activeTab === 'queries' ? '#d32020' : 'rgba(255,255,255,0.05)',
+                color: '#ffffff',
+                border: 'none',
+                textAlign: 'left'
+              }}
+            >
+              <MessageSquare size={18} />
+              <span>4. Inquiries & Queries</span>
+            </button>
+
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a
                 href="/"
@@ -387,6 +429,29 @@ export default function AdminLayout() {
             <BookOpen size={16} />
             <span>3. Blogs & Stories</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('queries')}
+            style={{
+              padding: '12px 4px',
+              color: activeTab === 'queries' ? '#d32020' : '#64748b',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              background: 'none',
+              border: 'none',
+              borderBottomWidth: '3px',
+              borderBottomStyle: 'solid',
+              borderBottomColor: activeTab === 'queries' ? '#d32020' : 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <MessageSquare size={16} />
+            <span>4. Inquiries & Queries</span>
+          </button>
         </div>
       </div>
 
@@ -413,6 +478,7 @@ export default function AdminLayout() {
         {activeTab === 'dashboard' && <AdminDashboard onNavigateCampaigns={() => setActiveTab('campaigns')} />}
         {activeTab === 'campaigns' && <AdminCampaigns />}
         {activeTab === 'blogs' && <AdminBlogs />}
+        {activeTab === 'queries' && <AdminQueries />}
       </main>
     </div>
   );
