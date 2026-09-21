@@ -14,12 +14,12 @@ export default function YourImpactSection({ onOpenDonate }) {
     <section className="impact-section" id="impact">
       <div className="container">
         {/* Section Header */}
-        <div style={{ marginBottom: '40px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '820px', margin: '0 auto 40px' }}>
           <span className="pill-tag">YOUR IMPACT</span>
           <h2 className="section-title">
             Every Contribution Has a <span style={{ color: '#d92626' }}>Purpose</span>
           </h2>
-          <p className="section-subtitle" style={{ maxWidth: '820px' }}>
+          <p className="section-subtitle" style={{ margin: '0 auto' }}>
             Your donation doesn't just support a campaign — it helps turn a genuine need into meaningful action. Together with our supporters, we work to ensure every contribution reaches the causes and communities that need it most.
           </p>
         </div>

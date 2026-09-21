@@ -1,52 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { ChevronLeft, ChevronRight, Sparkles, Heart } from 'lucide-react';
-
-const fallbackSlides = [
-  {
-    id: 'camp-1',
-    raisedAmount: 385000,
-    goalAmount: 500000,
-    title: 'Help Feed & Care for Animals Who Have No One',
-    description: 'Thousands of abandoned and vulnerable animals struggle for food, shelter, and medical care every day. Your support can help us provide them with protection.',
-    image: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'camp-2',
-    raisedAmount: 610000,
-    goalAmount: 750000,
-    title: 'Daily Nourishment & Meal Drive for 1,000+ Street Animals',
-    description: 'Feeding wholesome, nutritious food daily to thousands of hungry dogs, cats, and birds across urban animal shelters.',
-    image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'camp-3',
-    raisedAmount: 240000,
-    goalAmount: 400000,
-    title: 'Winter Warmth & Emergency Shelter Program',
-    description: 'Providing warm reflective jackets, bedding, and temporary shelter to protect helpless animals during harsh weather conditions.',
-    image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 'camp-4',
-    raisedAmount: 180000,
-    goalAmount: 300000,
-    title: 'Mass Vaccination & ABC Medical Rescue Mission',
-    description: 'Protecting stray animals from deadly diseases through comprehensive anti-rabies vaccination and humane population management.',
-    image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=800&q=80'
-  }
-];
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function HeroSection({ onOpenDonate }) {
-  const [slides, setSlides] = useState(fallbackSlides);
+  const [slides, setSlides] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
     const fetchHeroCampaigns = async () => {
       try {
+        setLoading(true);
         const [featRes, allRes] = await Promise.all([
           api.getFeatured().catch(() => ({ featuredCampaigns: [] })),
           api.getCampaigns('Active').catch(() => ({ campaigns: [] }))
@@ -63,15 +31,18 @@ export default function HeroSection({ onOpenDonate }) {
           }
         });
 
-        if (combined.length > 0) {
+        if (isMounted && combined.length > 0) {
           setSlides(combined.slice(0, 4));
         }
       } catch (err) {
         console.error('Failed to fetch hero campaigns:', err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchHeroCampaigns();
+    return () => { isMounted = false; };
   }, []);
 
   // Auto-scrolling carousel timer (Every 4.5 seconds, pauses on hover)
@@ -85,7 +56,19 @@ export default function HeroSection({ onOpenDonate }) {
     return () => clearInterval(timer);
   }, [isPaused, slides.length]);
 
-  const current = slides[activeSlide % slides.length] || fallbackSlides[0];
+  if (loading || slides.length === 0) {
+    return (
+      <section className="hero-wrapper">
+        <div className="hero-banner" style={{ background: '#120a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '1.1rem' }}>
+            {loading ? 'Loading Active Causes...' : 'No active causes currently available.'}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const current = slides[activeSlide % slides.length];
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);

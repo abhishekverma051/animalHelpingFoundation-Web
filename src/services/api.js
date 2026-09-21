@@ -189,6 +189,11 @@ export const api = {
     return handleResponse(res, 'Failed to fetch campaign donor list');
   },
 
+  getRecentDonations: async () => {
+    const res = await fetch(`${API_BASE_URL}/donations/recent`);
+    return handleResponse(res, 'Failed to fetch recent donations');
+  },
+
   // Razorpay Payment Gateway APIs
   createRazorpayOrder: async (amount, campaignId) => {
     const res = await safeFetch(`${API_BASE_URL}/razorpay/create-order`, {

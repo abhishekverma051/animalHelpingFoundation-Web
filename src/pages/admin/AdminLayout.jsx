@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, HeartHandshake, BookOpen, LogOut, Shield, ExternalLink, Menu, X, MessageSquare } from 'lucide-react';
-import webLogo from '../../assets/webLogo.png';
+import logo11 from '../../assets/logo11.png';
 import AdminDashboard from './AdminDashboard';
 import AdminCampaigns from './AdminCampaigns';
 import AdminBlogs from './AdminBlogs';
@@ -48,7 +48,7 @@ export default function AdminLayout() {
         }}>
           {/* Logo & Admin Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src={webLogo} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />
+            <img src={logo11} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />
             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '10px' }}>
               <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em', color: '#ffffff', display: 'block', lineHeight: 1.1 }}>
                 Admin Panel

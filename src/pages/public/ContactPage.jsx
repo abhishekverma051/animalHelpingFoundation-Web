@@ -122,8 +122,8 @@ export default function ContactPage() {
           opacity: 0.85,
           pointerEvents: 'none'
         }} className="banner-decor-left">
-          {/* Green Paw */}
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="#65a30d">
+          {/* Red Theme Paw */}
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="#d32020">
             <circle cx="7" cy="8" r="2.5" />
             <circle cx="17" cy="8" r="2.5" />
             <circle cx="12" cy="5" r="2.5" />
@@ -245,12 +245,12 @@ export default function ContactPage() {
                   width: '46px',
                   height: '46px',
                   borderRadius: '12px',
-                  backgroundColor: '#739c3e',
+                  backgroundColor: '#d32020',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(115, 156, 62, 0.25)'
+                  boxShadow: '0 4px 12px rgba(211, 32, 32, 0.28)'
                 }}>
                   <MapPin size={22} color="#ffffff" />
                 </div>
@@ -289,12 +289,12 @@ Madhya Pradesh (India)
                   width: '46px',
                   height: '46px',
                   borderRadius: '12px',
-                  backgroundColor: '#739c3e',
+                  backgroundColor: '#d32020',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(115, 156, 62, 0.25)'
+                  boxShadow: '0 4px 12px rgba(211, 32, 32, 0.28)'
                 }}>
                   <Phone size={22} color="#ffffff" />
                 </div>
@@ -331,12 +331,12 @@ Madhya Pradesh (India)
                   width: '46px',
                   height: '46px',
                   borderRadius: '12px',
-                  backgroundColor: '#739c3e',
+                  backgroundColor: '#d32020',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(115, 156, 62, 0.25)'
+                  boxShadow: '0 4px 12px rgba(211, 32, 32, 0.28)'
                 }}>
                   <Mail size={22} color="#ffffff" />
                 </div>
@@ -413,7 +413,7 @@ Madhya Pradesh (India)
           }}>
             {/* Form Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '28px' }}>
-              <Sparkles size={20} color="#739c3e" />
+              <Sparkles size={20} color="#d32020" />
               <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: 0 }}>
                 Fill the details
               </h3>
@@ -697,11 +697,11 @@ Madhya Pradesh (India)
             }}>
               <svg width="60" height="60" viewBox="0 0 100 100" fill="none">
                 <path d="M40 30 C45 20, 55 20, 58 32 C62 25, 72 27, 72 38 C75 32, 85 36, 82 48 C78 62, 60 75, 45 75 C30 75, 25 60, 30 48 Z" fill="#eab308" />
-                <path d="M48 52 C48 48, 54 46, 56 48 C58 50, 54 56, 48 60 C42 56, 38 50, 40 48 C42 46, 48 48, 48 52 Z" fill="#047857" />
-                <circle cx="20" cy="40" r="3" fill="#047857" />
-                <circle cx="26" cy="30" r="2.5" fill="#047857" />
-                <circle cx="16" cy="50" r="2.5" fill="#047857" />
-                <path d="M45 75 Q60 85 75 80 Q90 75 95 90" stroke="#047857" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M48 52 C48 48, 54 46, 56 48 C58 50, 54 56, 48 60 C42 56, 38 50, 40 48 C42 46, 48 48, 48 52 Z" fill="#d32020" />
+                <circle cx="20" cy="40" r="3" fill="#d32020" />
+                <circle cx="26" cy="30" r="2.5" fill="#d32020" />
+                <circle cx="16" cy="50" r="2.5" fill="#d32020" />
+                <path d="M45 75 Q60 85 75 80 Q90 75 95 90" stroke="#d32020" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
             </div>
           </div>

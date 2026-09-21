@@ -55,20 +55,24 @@ export default function RecognitionSection({ onOpenDonate }) {
               </div>
             </div>
 
-            {/* Card 3: Dark Red Statement Card */}
+            {/* Card 3: Dark Red Statement Card with Full Background Image */}
             <div className="stat-box-red">
-              <div style={{ height: '110px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
-                <img src="/assets/oxx.png" alt="Rescue Under Rubble" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img 
+                src="/assets/oxx.png" 
+                alt="Rescue Work Background" 
+                className="stat-box-red-bg" 
+              />
+              <div className="stat-box-red-content">
+                <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.95)', lineHeight: 1.55, marginBottom: '20px', fontWeight: 500 }}>
+                  Our work isn't measured only in numbers. It's measured in lives rescued, wounds healed, hungry animals fed, and vulnerable lives given a safe place to recover.
+                </p>
+                <button 
+                  style={{ background: '#ffffff', color: '#b91c1c', fontWeight: 800, fontSize: '0.85rem', padding: '12px 20px', borderRadius: '50px', width: '100%', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}
+                  onClick={() => onOpenDonate()}
+                >
+                  Learn More About Our Work →
+                </button>
               </div>
-              <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, marginBottom: '20px' }}>
-                Our work isn't measured only in numbers. It's measured in lives rescued, wounds healed, hungry animals fed, and vulnerable lives given a safe place to recover.
-              </p>
-              <button 
-                style={{ background: '#ffffff', color: '#b91c1c', fontWeight: 800, fontSize: '0.85rem', padding: '10px 20px', borderRadius: '50px', width: '100%' }}
-                onClick={() => onOpenDonate()}
-              >
-                Learn More About Our Work →
-              </button>
             </div>
           </div>
 

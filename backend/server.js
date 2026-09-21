@@ -1084,6 +1084,40 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   });
 });
 
+// Public Recent Completed Donations Endpoint
+app.get('/api/donations/recent', async (req, res) => {
+  let allDonations = [];
+
+  if (isMongoConnected) {
+    allDonations = await DonationModel.find({ status: 'Completed' }).sort({ createdAt: -1 });
+  } else {
+    const db = readFileDB();
+    allDonations = (db.donations || []).filter(d => d.status === 'Completed');
+  }
+
+  const totalDonors = allDonations.length;
+  const totalRaised = allDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+  const publicDonations = allDonations.slice(0, 10).map(d => {
+    const item = d.toObject ? d.toObject() : d;
+    return {
+      id: item.id,
+      campaignId: item.campaignId,
+      donorName: item.isAnonymous ? 'Anonymous' : (item.donorName || 'Kind Donor'),
+      amount: item.amount,
+      isAnonymous: Boolean(item.isAnonymous),
+      createdAt: item.createdAt
+    };
+  });
+
+  res.json({
+    success: true,
+    totalDonors,
+    totalRaised,
+    donations: publicDonations
+  });
+});
+
 // Admin All Donations & Razorpay Logs Endpoint
 app.get('/api/admin/donations', verifyAdminToken, async (req, res) => {
   const { campaignId } = req.query;
