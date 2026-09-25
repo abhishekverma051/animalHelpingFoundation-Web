@@ -3,7 +3,7 @@
  * Directly interacts with Meta's official window.fbq SDK
  */
 
-const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '1073347982352374';
+const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '2149738702271752';
 
 export const pixel = {
   /**
